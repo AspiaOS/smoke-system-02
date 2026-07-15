@@ -1,0 +1,1 @@
+ALTER TABLE public.categories ADD COLUMN IF NOT EXISTS color text NOT NULL DEFAULT '#22c55e';
