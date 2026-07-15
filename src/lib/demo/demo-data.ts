@@ -52,9 +52,15 @@ export const PROFILE_SIZES = {
   small: {
     categories: 6,
     products: 12,
-    neighborhoods: 8,
+    neighborhoods: 6,
     orders: 30,
-    expenses: 20,
+    expenses: 15,
+    // Quotas somam = orders
+    orders_accepted: 21,
+    orders_pending: 5,
+    orders_cancelled: 4,
+    // Clientes sumidos: aceites antigos (>60d) com telefone dedicado
+    sumidos: 3,
   },
   full: {
     categories: 8,
@@ -62,8 +68,13 @@ export const PROFILE_SIZES = {
     neighborhoods: 12,
     orders: 120,
     expenses: 60,
+    orders_accepted: 84,
+    orders_pending: 18,
+    orders_cancelled: 18,
+    sumidos: 5,
   },
 } as const;
+
 
 export const CATEGORY_NAMES = [
   { name: "Dispositivos", active: true },
