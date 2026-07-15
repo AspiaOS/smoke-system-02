@@ -134,7 +134,7 @@ export async function runSeed(
     // ==================== 3. VARIAÇÕES (stock=0) ====================
     type VarSpec = {
       product_id: string; name: string; price: number; cost: number;
-      min_stock: number; active: boolean; store_id: string; stock: number;
+      min_stock: number; active: boolean; stock: number;
       __initialStock: number; __keepZero: boolean;
     };
     const varSpecs: VarSpec[] = [];
@@ -144,12 +144,11 @@ export async function runSeed(
       flavors.forEach((flavor, vi) => {
         const price = rng.int(15, 90);
         const cost = Math.max(5, Math.round(price * (0.4 + rng.next() * 0.3)));
-        // cenários por índice global
         const global = pi * 10 + vi;
-        const keepZero = global % 17 === 0; // sem estoque
-        const lowStock = global % 11 === 3; // abaixo do mínimo
-        const atMin = global % 13 === 5; // exatamente no mínimo
-        const isInactive = global % 19 === 7; // variação inativa
+        const keepZero = global % 17 === 0;
+        const lowStock = global % 11 === 3;
+        const atMin = global % 13 === 5;
+        const isInactive = global % 19 === 7;
         const min_stock = rng.int(3, 8);
         const initial = keepZero
           ? 0
@@ -165,7 +164,6 @@ export async function runSeed(
           cost,
           min_stock,
           active: !isInactive,
-          store_id: storeId,
           stock: 0,
           __initialStock: initial,
           __keepZero: keepZero,
@@ -173,11 +171,12 @@ export async function runSeed(
       });
     });
 
+    const varInsertPayload = varSpecs.map(
+      ({ __initialStock: _s, __keepZero: _k, ...rest }) => rest,
+    );
     const { data: insertedVars, error: varErr } = await supabase
       .from("variations")
-      .insert(
-        varSpecs.map(({ __initialStock: _s, __keepZero: _k, ...rest }) => rest),
-      )
+      .insert(varInsertPayload)
       .select("id");
     if (varErr) throw new Error(`variations:${varErr.message}`);
     entries.variations = insertedVars.map((v) => v.id);
