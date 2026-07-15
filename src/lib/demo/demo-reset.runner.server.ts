@@ -22,8 +22,20 @@ export async function runReset(supabase: Client): Promise<{
   if (error) throw error;
   const manifest = rows?.[0];
   if (!manifest) throw new Error("no_manifest_found: nada para resetar");
-  const entries = (manifest.entries as unknown as ManifestEntries) ?? null;
-  if (!entries) throw new Error("manifest_without_entries");
+  const partial = (manifest.entries as unknown as Partial<ManifestEntries>) ?? {};
+  const entries: ManifestEntries = {
+    categories: partial.categories ?? [],
+    products: partial.products ?? [],
+    variations: partial.variations ?? [],
+    neighborhoods: partial.neighborhoods ?? [],
+    customers: partial.customers ?? [],
+    orders: partial.orders ?? [],
+    order_items: partial.order_items ?? [],
+    sales: partial.sales ?? [],
+    stock_movements: partial.stock_movements ?? [],
+    expenses: partial.expenses ?? [],
+    audit_logs: partial.audit_logs ?? [],
+  };
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -33,30 +45,62 @@ export async function runReset(supabase: Client): Promise<{
     | "audit_logs" | "stock_movements" | "sales" | "order_items" | "orders"
     | "expenses" | "customers" | "variations" | "products" | "categories" | "neighborhoods";
 
-  async function del(table: Tbl, ids: readonly (string | number)[]): Promise<void> {
-    if (ids.length === 0) { removed[table] = 0; return; }
+  async function delByCol(
+    table: Tbl,
+    col: string,
+    ids: readonly (string | number)[],
+  ): Promise<number> {
+    if (!ids || ids.length === 0) return 0;
     let count = 0;
     for (let i = 0; i < ids.length; i += 300) {
       const chunk = ids.slice(i, i + 300);
-      // Union type across tables is too narrow at .in(); cast to any is safe.
-
       const { error, data } = await (supabaseAdmin.from(table).delete() as unknown as {
-        in: (col: string, vals: readonly (string | number)[]) => { select: (c: string) => Promise<{ error: { message: string } | null; data: { id: string | number }[] | null }> };
-      }).in("id", chunk).select("id");
-      if (error) throw new Error(`delete ${table}:${error.message}`);
+        in: (c: string, v: readonly (string | number)[]) => { select: (s: string) => Promise<{ error: { message: string } | null; data: { id: string | number }[] | null }> };
+      }).in(col, chunk).select("id");
+      if (error) throw new Error(`delete ${table} by ${col}: ${error.message}`);
       count += (data ?? []).length;
     }
-    removed[table] = count;
+    return count;
   }
 
-  // Ordem FK-safe
+  async function del(table: Tbl, ids: readonly (string | number)[]): Promise<void> {
+    removed[table] = (removed[table] ?? 0) + await delByCol(table, "id", ids);
+  }
+
+  // Ordem FK-safe. stock_movements ANTES de variations/orders.
+  // Também usa variation_id/order_id para apanhar linhas criadas por
+  // stock_entry/stock_adjust/accept_order que não ficaram no manifest.
+  removed["stock_movements"] =
+    (await delByCol("stock_movements", "variation_id", entries.variations)) +
+    (await delByCol("stock_movements", "order_id", entries.orders)) +
+    (await delByCol("stock_movements", "id", entries.stock_movements));
+
+  // sales/order_items podem existir por accept_order sem estar no manifest.
+  removed["sales"] =
+    (await delByCol("sales", "order_id", entries.orders)) +
+    (await delByCol("sales", "id", entries.sales));
+  removed["order_items"] =
+    (await delByCol("order_items", "order_id", entries.orders)) +
+    (await delByCol("order_items", "id", entries.order_items));
+
   await del("audit_logs", entries.audit_logs);
-  await del("stock_movements", entries.stock_movements);
-  await del("sales", entries.sales);
-  await del("order_items", entries.order_items);
   await del("orders", entries.orders);
   await del("expenses", entries.expenses);
-  await del("customers", entries.customers);
+
+  // Clientes: preservar quem tem pedidos/vendas fora do lote.
+  const preservedCustomers: string[] = [];
+  const deletableCustomers: string[] = [];
+  for (const cid of entries.customers) {
+    const [{ count: extOrders }, { count: extSales }] = await Promise.all([
+      supabaseAdmin.from("orders").select("id", { count: "exact", head: true }).eq("customer_id", cid),
+      supabaseAdmin.from("sales").select("id", { count: "exact", head: true }).eq("customer_id", cid),
+    ]);
+    if ((extOrders ?? 0) > 0 || (extSales ?? 0) > 0) preservedCustomers.push(cid);
+    else deletableCustomers.push(cid);
+  }
+  await del("customers", deletableCustomers);
+  removed["customers_preserved"] = preservedCustomers.length;
+
   await del("variations", entries.variations);
   await del("products", entries.products);
   await del("categories", entries.categories);
