@@ -69,12 +69,12 @@ function Checkout() {
       if (error) throw error;
       const row = Array.isArray(data) ? data[0] : data;
       if (!row) throw new Error("Falha ao criar pedido");
-      return row as {
-        order_id: string;
-        subtotal: string;
-        delivery_fee: string;
-        total: string;
-        whatsapp_number: string;
+      return {
+        order_id: String(row.order_id),
+        subtotal: String(row.subtotal),
+        delivery_fee: String(row.delivery_fee),
+        total: String(row.total),
+        whatsapp_number: String(row.whatsapp_number ?? ""),
       };
     },
     onSuccess: (row) => {

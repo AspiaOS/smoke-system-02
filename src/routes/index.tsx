@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Search, ShoppingBag, Plus, Star, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/money";
+import { useCart } from "@/hooks/use-cart";
 
 export const Route = createFileRoute("/")({
   component: Storefront,
@@ -58,6 +59,7 @@ function useStoreSettings() {
 function Storefront() {
   const { data: settings } = useStoreSettings();
   const { data: rows, isLoading } = useCatalog();
+  const { count: cartCount } = useCart();
   const [chip, setChip] = useState<(typeof CHIPS)[number]>("Tudo");
   const [q, setQ] = useState("");
 
