@@ -1,10 +1,7 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
@@ -56,66 +53,121 @@ function AuthPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>{mode === "signin" ? "Entrar no painel" : "Criar conta do dono"}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={onSubmit} className="space-y-4">
+    <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
+      {/* soft lime glow */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-40 top-1/3 h-[520px] w-[520px] rounded-full opacity-25 blur-[120px]"
+        style={{ background: "var(--color-primary)" }}
+      />
+
+      <header className="relative z-10 flex items-center justify-between px-6 py-6 md:px-10">
+        <Link to="/" className="flex items-baseline gap-0.5">
+          <span className="font-display text-3xl font-bold tracking-tight">SMOKE</span>
+          <span className="text-3xl font-bold text-primary">.</span>
+        </Link>
+        <div className="flex flex-col items-end">
+          <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+            Entrar
+          </span>
+          <span className="mt-1 h-px w-10 bg-primary" />
+        </div>
+      </header>
+
+      <main className="relative z-10 mx-auto flex w-full max-w-md flex-col px-6 pb-16">
+        <section className="rounded-[28px] border border-border bg-surface/90 p-7 backdrop-blur">
+          <h1 className="font-display text-4xl font-bold leading-[1.05] tracking-tight">
+            {mode === "signin" ? (
+              <>
+                Bem-vindo<br />de volta
+              </>
+            ) : (
+              <>
+                Criar<br />conta
+              </>
+            )}
+          </h1>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Painel restrito ao time da loja.
+          </p>
+
+          <form onSubmit={onSubmit} className="mt-7 space-y-5">
             {mode === "signup" && (
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome de exibição</Label>
-                <Input
-                  id="name"
+              <Field label="Nome">
+                <input
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="Seu nome"
+                  className="w-full rounded-full bg-surface-contrast px-5 py-3.5 text-sm text-foreground outline-none ring-1 ring-border transition focus:ring-primary"
                 />
-              </div>
+              </Field>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
+
+            <Field label="Email">
+              <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                placeholder="voce@dominio.com"
                 autoComplete="email"
+                className="w-full rounded-full bg-surface-contrast px-5 py-3.5 text-sm text-foreground outline-none ring-1 ring-border transition placeholder:text-muted-foreground focus:ring-primary"
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
+            </Field>
+
+            <Field label="Senha">
+              <input
                 type="password"
                 required
                 minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                placeholder="••••••••"
+                className="w-full rounded-full bg-surface-contrast px-5 py-3.5 text-sm text-foreground outline-none ring-1 ring-border transition placeholder:text-muted-foreground focus:ring-primary"
               />
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
+            </Field>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="group flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-4 text-sm font-semibold text-primary-foreground transition hover:brightness-110 disabled:opacity-60"
+            >
               {loading ? "Aguarde…" : mode === "signin" ? "Entrar" : "Criar conta"}
-            </Button>
+              <ArrowUpRight className="h-4 w-4 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </button>
+
             <button
               type="button"
-              className="w-full text-center text-sm text-muted-foreground hover:text-foreground"
               onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+              className="block w-full text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground transition hover:text-foreground"
             >
               {mode === "signin"
-                ? "Primeira vez? Criar conta do dono"
+                ? "Primeiro acesso? Criar conta"
                 : "Já tenho conta — entrar"}
             </button>
           </form>
-          <p className="mt-4 text-xs text-muted-foreground">
-            A primeira conta criada é o dono da loja. Contas seguintes ficam sem acesso até serem
-            promovidas.
-          </p>
-        </CardContent>
-      </Card>
+        </section>
+
+        <Link
+          to="/"
+          className="mx-auto mt-8 inline-flex items-center gap-2 rounded-full border border-border bg-surface-contrast px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground transition hover:text-foreground"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Voltar à vitrine
+        </Link>
+      </main>
     </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+        {label}
+      </span>
+      {children}
+    </label>
   );
 }
