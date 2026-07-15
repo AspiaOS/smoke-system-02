@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Search, ShoppingBag, Plus, Star, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/money";
+import { useCart } from "@/hooks/use-cart";
 
 export const Route = createFileRoute("/")({
   component: Storefront,
@@ -58,6 +59,7 @@ function useStoreSettings() {
 function Storefront() {
   const { data: settings } = useStoreSettings();
   const { data: rows, isLoading } = useCatalog();
+  const { count: cartCount } = useCart();
   const [chip, setChip] = useState<(typeof CHIPS)[number]>("Tudo");
   const [q, setQ] = useState("");
 
@@ -130,12 +132,16 @@ function Storefront() {
               className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
           </div>
-          <button className="relative flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface">
+          <Link
+            to="/checkout"
+            aria-label="Carrinho"
+            className="relative flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface"
+          >
             <ShoppingBag className="h-5 w-5" />
             <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
-              0
+              {cartCount}
             </span>
-          </button>
+          </Link>
           <Link
             to="/auth"
             className="hidden rounded-full border border-border bg-surface px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground transition hover:text-foreground md:inline-flex"
@@ -221,14 +227,20 @@ function Storefront() {
 
           {!isLoading &&
             products.map((p, i) => (
-              <ProductCard
+              <Link
                 key={p.id}
-                badge={BADGES[i % BADGES.length]}
-                rating={(4.8 + ((i * 7) % 3) / 10).toFixed(1)}
-                name={p.name}
-                price={formatBRL(p.minPrice)}
-                image={p.image}
-              />
+                to="/p/$id"
+                params={{ id: p.id }}
+                className="block focus:outline-none"
+              >
+                <ProductCard
+                  badge={BADGES[i % BADGES.length]}
+                  rating={(4.8 + ((i * 7) % 3) / 10).toFixed(1)}
+                  name={p.name}
+                  price={formatBRL(p.minPrice)}
+                  image={p.image}
+                />
+              </Link>
             ))}
         </div>
       </main>

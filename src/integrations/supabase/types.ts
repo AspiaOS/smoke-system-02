@@ -716,6 +716,23 @@ export type Database = {
       }
     }
     Functions: {
+      create_public_order: {
+        Args: {
+          p_address: string
+          p_customer_name: string
+          p_customer_phone: string
+          p_items: Json
+          p_neighborhood_id: string
+          p_payment_method: Database["public"]["Enums"]["payment_method"]
+        }
+        Returns: {
+          delivery_fee: number
+          order_id: string
+          subtotal: number
+          total: number
+          whatsapp_number: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
