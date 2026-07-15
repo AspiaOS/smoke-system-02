@@ -29,18 +29,21 @@ export async function runReset(supabase: Client): Promise<{
 
   const removed: Record<string, number> = {};
 
-  async function del(table: keyof Database["public"]["Tables"], ids: (string | number)[]): Promise<void> {
+  type Tbl =
+    | "audit_logs" | "stock_movements" | "sales" | "order_items" | "orders"
+    | "expenses" | "customers" | "variations" | "products" | "categories" | "neighborhoods";
+
+  async function del(table: Tbl, ids: readonly (string | number)[]): Promise<void> {
     if (ids.length === 0) { removed[table] = 0; return; }
-    // Chunk 300 p/ evitar url gigante
     let count = 0;
     for (let i = 0; i < ids.length; i += 300) {
       const chunk = ids.slice(i, i + 300);
-      const q = supabaseAdmin.from(table as string).delete().in("id", chunk);
-      const { error: e, count: c } = await q.select("*", { count: "exact", head: true });
-      if (e) throw new Error(`delete ${String(table)}:${e.message}`);
-      count += c ?? chunk.length;
+      // @ts-expect-error — .in() union too narrow across tables; runtime is fine.
+      const { error, data } = await supabaseAdmin.from(table).delete().in("id", chunk).select("id");
+      if (error) throw new Error(`delete ${table}:${error.message}`);
+      count += (data ?? []).length;
     }
-    removed[table as string] = count;
+    removed[table] = count;
   }
 
   // Ordem FK-safe
