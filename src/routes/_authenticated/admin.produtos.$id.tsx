@@ -346,7 +346,10 @@ function VariationRow({
           type="number"
           step="0.01"
           defaultValue={variation.price}
-          onBlur={(e) => e.target.value !== variation.price && onPatch({ price: e.target.value })}
+          onBlur={(e) => {
+            const n = Number(e.target.value);
+            if (Number.isFinite(n) && n !== variation.price) onPatch({ price: n });
+          }}
         />
       </div>
       <div className="space-y-1">
@@ -355,7 +358,10 @@ function VariationRow({
           type="number"
           step="0.01"
           defaultValue={variation.cost}
-          onBlur={(e) => e.target.value !== variation.cost && onPatch({ cost: e.target.value })}
+          onBlur={(e) => {
+            const n = Number(e.target.value);
+            if (Number.isFinite(n) && n !== variation.cost) onPatch({ cost: n });
+          }}
         />
       </div>
       <div className="space-y-1">
