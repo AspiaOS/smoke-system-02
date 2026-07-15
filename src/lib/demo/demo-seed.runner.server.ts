@@ -370,10 +370,8 @@ export async function runSeed(
 
     // ==================== 9. Mudanças de preço (audit price.update) ====================
     const priceCands = rng.shuffle(varById).slice(0, Math.min(15, Math.max(3, Math.floor(varById.length / 8))));
-    const priceAuditInserts: {
-      store_id: string; actor_id: string; action: string;
-      entity: string; entity_id: string; payload: Record<string, unknown>;
-    }[] = [];
+    type AuditInsert = Database["public"]["Tables"]["audit_logs"]["Insert"];
+    const priceAuditInserts: AuditInsert[] = [];
     for (const v of priceCands) {
       const before = v.price;
       const after = Math.max(5, Math.round(before * (0.9 + rng.next() * 0.3)));
@@ -386,7 +384,7 @@ export async function runSeed(
         action: "price.update",
         entity: "variation",
         entity_id: v.id,
-        payload: { before, after },
+        payload: { before, after } as unknown as AuditInsert["payload"],
       });
     }
     if (priceAuditInserts.length > 0) {
