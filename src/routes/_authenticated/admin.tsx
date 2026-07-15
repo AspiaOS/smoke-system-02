@@ -34,12 +34,12 @@ const NAV: readonly NavItem[] = [
   { to: "/admin/produtos", label: "Produtos", icon: Package, enabled: true },
   { to: "/admin/categorias", label: "Categorias", icon: Tag, enabled: true },
   { to: "/admin/pedidos", label: "Pedidos", icon: ShoppingCart, enabled: true },
-  { to: "/admin/clientes", label: "Clientes", icon: Users, enabled: false },
+  { to: "/admin/clientes", label: "Clientes", icon: Users, enabled: true },
   { to: "/admin/vendas", label: "Vendas", icon: DollarSign, enabled: true },
-  { to: "/admin/despesas", label: "Despesas", icon: Receipt, enabled: false },
+  { to: "/admin/despesas", label: "Despesas", icon: Receipt, enabled: true },
   { to: "/admin/estoque", label: "Estoque", icon: Warehouse, enabled: true },
   { to: "/admin/frete", label: "Frete", icon: Truck, enabled: true },
-  { to: "/admin/configuracoes", label: "Configurações", icon: Settings, enabled: false },
+  { to: "/admin/configuracoes", label: "Configurações", icon: Settings, enabled: true },
 ] as const;
 
 function AdminLayout() {
