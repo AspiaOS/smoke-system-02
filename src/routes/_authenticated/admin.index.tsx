@@ -108,11 +108,11 @@ function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("order_items")
-        .select("product_name,quantity,created_at")
-        .gte("created_at", startOfDay(29).toISOString());
+        .select("product_name,quantity,orders!inner(created_at)")
+        .gte("orders.created_at", startOfDay(29).toISOString());
       if (error) throw error;
       const map = new Map<string, number>();
-      for (const it of data as { product_name: string; quantity: number }[]) {
+      for (const it of (data as unknown as { product_name: string; quantity: number }[])) {
         map.set(it.product_name, (map.get(it.product_name) ?? 0) + it.quantity);
       }
       return [...map.entries()]
