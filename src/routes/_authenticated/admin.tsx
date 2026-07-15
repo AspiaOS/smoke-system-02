@@ -41,6 +41,7 @@ const NAV: readonly NavItem[] = [
   { to: "/admin/estoque", label: "Estoque", icon: Warehouse, enabled: true },
   { to: "/admin/frete", label: "Frete", icon: Truck, enabled: true },
   { to: "/admin/configuracoes", label: "Configurações", icon: Settings, enabled: true },
+  { to: "/admin/auditoria", label: "Auditoria", icon: ScrollText, enabled: true },
 ] as const;
 
 function AdminLayout() {
