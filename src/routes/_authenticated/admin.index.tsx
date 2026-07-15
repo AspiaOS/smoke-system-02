@@ -147,7 +147,7 @@ function Dashboard() {
         .order("created_at", { ascending: false })
         .limit(6);
       if (error) throw error;
-      return data as { id: string; action: string; entity: string; created_at: string }[];
+      return data as { id: number; action: string; entity: string; created_at: string }[];
     },
   });
 
