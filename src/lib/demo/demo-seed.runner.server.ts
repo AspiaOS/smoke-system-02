@@ -250,26 +250,73 @@ export async function runSeed(
     );
     if (canSellVars.length === 0) throw new Error("no_sellable_variations");
 
-    // Distribuição de idade: 30% últimos 7d, 40% últimos 30d, 30% até 120d
-    // Distribuição de destino: 70% accept, 15% pending, 15% cancel
-    // Alguns clientes recorrentes: reusar 10 telefones em 40% dos pedidos.
-    const recurrentPhones = Array.from({ length: 10 }, (_, k) => makeTestPhone(k));
+    // Telefones dedicados a clientes "sumidos" (só aceites >60 dias)
+    const sumidosPhones = Array.from(
+      { length: sizes.sumidos },
+      (_, k) => makeTestPhone(500 + k),
+    );
+    // Telefones recorrentes (2-8 compras, distribuídos em várias datas)
+    const recurrentPhones = Array.from(
+      { length: profile === "full" ? 15 : 8 },
+      (_, k) => makeTestPhone(100 + k),
+    );
+
+    // Pré-computa fates: quotas exatas em vez de aleatório.
+    // Sumidos ocupam os primeiros N slots com fate=accept e daysAgo>65.
+    const nAcc = sizes.orders_accepted;
+    const nPen = sizes.orders_pending;
+    const nCan = sizes.orders_cancelled;
+    const acceptSlots = nAcc - sizes.sumidos; // aceites "normais"
+    const fateSeq: ("accept" | "cancel" | "pending")[] = [
+      ...Array(sizes.sumidos).fill("accept" as const),
+      ...Array(acceptSlots).fill("accept" as const),
+      ...Array(nPen).fill("pending" as const),
+      ...Array(nCan).fill("cancel" as const),
+    ];
+    // Embaralha mas mantém os N primeiros (sumidos) fixos no início.
+    const sumidosHead = fateSeq.slice(0, sizes.sumidos);
+    const rest = rng.shuffle(fateSeq.slice(sizes.sumidos));
+    const fates = [...sumidosHead, ...rest];
 
     for (let i = 0; i < sizes.orders; i++) {
-      const ageBucket = rng.next();
-      const daysAgo =
-        ageBucket < 0.3 ? rng.int(0, 6)
-        : ageBucket < 0.7 ? rng.int(7, 30)
-        : rng.int(30, 120);
+      const fate = fates[i];
+      const isSumido = i < sizes.sumidos;
 
-      const useRecurrent = rng.next() < 0.4;
-      const phone = useRecurrent ? rng.pick(recurrentPhones) : makeTestPhone(1000 + i);
+      // Datas coerentes com o fate
+      let daysAgo: number;
+      if (isSumido) {
+        daysAgo = rng.int(70, 115); // sumido: >60 dias
+      } else if (fate === "pending") {
+        daysAgo = rng.int(0, 2); // pendentes: recentes
+      } else if (fate === "cancel") {
+        daysAgo = rng.int(0, 90);
+      } else {
+        // accept "normal": 0..60 dias — garante clientes ativos recentes
+        daysAgo = rng.int(0, 60);
+      }
+
+      // Telefone: sumidos usam pool próprio; senão 40% recorrente
+      let phone: string;
+      if (isSumido) {
+        phone = sumidosPhones[i % sumidosPhones.length];
+      } else if (rng.next() < 0.45) {
+        phone = rng.pick(recurrentPhones);
+      } else {
+        phone = makeTestPhone(1000 + i);
+      }
+
       const firstName = rng.pick(FIRST_NAMES);
       const lastName = rng.pick(LAST_NAMES);
       const customerName = `${firstName} ${lastName}`;
       const street = `${rng.pick(STREETS)}, ${rng.int(10, 999)}`;
       const nbr = rng.pick(activeNbrs);
-      const payment = rng.pick(PAYMENT_METHODS) as PaymentMethod;
+      // Distribuição realista de pagamento: pix 45 / dinheiro 20 / débito 18 / crédito 17
+      const payR = rng.next();
+      const payment: PaymentMethod =
+        payR < 0.45 ? "pix"
+        : payR < 0.65 ? "cash"
+        : payR < 0.83 ? "debit"
+        : "credit";
 
       const itemCount = rng.int(1, 3);
       const itemsPool = rng.shuffle(canSellVars).slice(0, itemCount);
@@ -293,32 +340,20 @@ export async function runSeed(
       if (!orderId) throw new Error(`create_public_order[${i}] returned no id`);
       entries.orders.push(orderId);
 
-      // Decisão do destino
-      const fateR = rng.next();
-      // Pedidos muito recentes (<1d) tendem a ficar pending (para tela de fila)
-      const forcePending = daysAgo <= 1 && i % 6 === 0;
-      const fate: "accept" | "cancel" | "pending" =
-        forcePending ? "pending"
-        : fateR < 0.7 ? "accept"
-        : fateR < 0.85 ? "cancel"
-        : "pending";
-
-      orderInfos.push({ orderId, whenDaysAgo: daysAgo, fate });
-
+      let effectiveFate: "accept" | "cancel" | "pending" = fate;
       if (fate === "cancel") {
-        const reason = rng.next() < 0.9 ? rng.pick(CANCEL_REASONS) : "";
+        const reason = rng.pick(CANCEL_REASONS);
         const { error: cxErr } = await supabase.rpc("cancel_order", {
-          p_order_id: orderId, p_reason: reason || "",
+          p_order_id: orderId, p_reason: reason,
         });
         if (cxErr) throw new Error(`cancel_order[${orderId}]:${cxErr.message}`);
       } else if (fate === "accept") {
         const beforeSaleMove = await maxStockMovementId(supabase);
         const { error: axErr } = await supabase.rpc("accept_order", { p_order_id: orderId });
         if (axErr) {
-          // Estoque insuficiente é possível se muitos pedidos consumirem — apenas cancela em vez de falhar tudo.
           if (axErr.message.includes("insufficient_stock")) {
             await supabase.rpc("cancel_order", { p_order_id: orderId, p_reason: "insufficient_stock (demo)" });
-            orderInfos[orderInfos.length - 1].fate = "cancel";
+            effectiveFate = "cancel";
           } else {
             throw new Error(`accept_order[${orderId}]:${axErr.message}`);
           }
@@ -327,6 +362,7 @@ export async function runSeed(
           entries.stock_movements.push(...newMoves);
         }
       }
+      orderInfos.push({ orderId, whenDaysAgo: daysAgo, fate: effectiveFate });
     }
 
     // Capturar sales criadas pelos accepts
@@ -335,13 +371,17 @@ export async function runSeed(
         .from("sales").select("id").in("order_id", entries.orders);
       entries.sales = (salesRows ?? []).map((s) => s.id);
     }
-    // Capturar customers criados
-    const { data: customerRows } = await supabase
-      .from("customers")
-      .select("id")
-      .eq("store_id", storeId)
-      .like("phone", "5511%");
-    entries.customers = (customerRows ?? []).map((c) => c.id);
+    // Capturar customers *do lote* — via customer_id dos pedidos (não por phone LIKE)
+    if (entries.orders.length > 0) {
+      const { data: orderRows } = await supabase
+        .from("orders").select("customer_id").in("id", entries.orders);
+      const custIds = Array.from(new Set(
+        (orderRows ?? [])
+          .map((o) => o.customer_id)
+          .filter((v): v is string => !!v),
+      ));
+      entries.customers = custIds;
+    }
 
     // Capturar order_items
     if (entries.orders.length > 0) {
@@ -350,6 +390,7 @@ export async function runSeed(
       entries.order_items = (oiRows ?? []).map((oi) => oi.id as number);
     }
     await updateManifest(supabase, manifest.id, { entries });
+
 
     // ==================== 8. DESPESAS ====================
     const expensesInserts = [];
