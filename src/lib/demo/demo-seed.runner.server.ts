@@ -40,11 +40,19 @@ async function loadStoreContext(supabase: Client, userId: string) {
 // ---------------------------------------------------------------------------
 // Seed principal — orquestra tudo. Retorna resumo textual.
 // ---------------------------------------------------------------------------
+export type SeedSummary = {
+  version: string;
+  profile: Profile;
+  seed: number;
+  counts: Record<string, number>;
+  financials: Record<string, number>;
+};
+
 export async function runSeed(
   supabase: Client,
   userId: string,
   profile: Profile,
-): Promise<{ manifestId: string; summary: Record<string, unknown> }> {
+): Promise<{ manifestId: string; summary: SeedSummary }> {
   assertDemoEnabled();
   await assertOwner(supabase);
 
