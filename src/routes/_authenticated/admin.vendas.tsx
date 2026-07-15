@@ -207,12 +207,12 @@ function SalesPage() {
         <CardContent className="p-0">
           {isLoading && <p className="p-6 text-sm text-muted-foreground">Carregando…</p>}
           {!isLoading && filtered.length === 0 && (
-            <div className="flex flex-col items-center gap-3 p-10 text-center">
-              <div className="rounded-full bg-muted p-3"><Receipt className="h-6 w-6 text-muted-foreground" /></div>
-              <div className="space-y-1">
-                <p className="font-medium">Nenhuma venda registrada ainda</p>
+            <div className="flex flex-col items-center gap-3 p-6 text-center">
+              <div className="rounded-full bg-muted p-2.5"><Receipt className="h-5 w-5 text-muted-foreground" /></div>
+              <div className="space-y-0.5">
+                <p className="font-medium">Nenhuma venda registrada</p>
                 <p className="text-sm text-muted-foreground">
-                  As vendas aparecerão aqui quando pedidos pendentes forem aceitos.
+                  As vendas aparecerão automaticamente quando os pedidos forem aceitos.
                 </p>
               </div>
               <Button asChild variant="outline" size="sm">
