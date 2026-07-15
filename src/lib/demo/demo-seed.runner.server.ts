@@ -255,7 +255,7 @@ export async function runSeed(
       fate: "accept" | "cancel" | "pending";
     }[] = [];
     const canSellVars = varById.filter(
-      (v) => v.active && !v.__keepZero && v.__initialStock >= 2,
+      (v) => v.active && v.__productSellable && !v.__keepZero && v.__initialStock >= 2,
     );
     if (canSellVars.length === 0) throw new Error("no_sellable_variations");
 
