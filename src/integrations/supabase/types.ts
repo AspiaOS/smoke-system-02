@@ -716,6 +716,11 @@ export type Database = {
       }
     }
     Functions: {
+      accept_order: { Args: { p_order_id: string }; Returns: string }
+      cancel_order: {
+        Args: { p_order_id: string; p_reason: string }
+        Returns: undefined
+      }
       create_public_order: {
         Args: {
           p_address: string
