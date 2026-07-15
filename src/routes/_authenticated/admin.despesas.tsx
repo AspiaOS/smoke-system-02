@@ -70,7 +70,7 @@ function ExpensesPage() {
         store_id: store.id,
         description: form.description.trim(),
         category: form.category.trim() || "Geral",
-        amount: centsToNumeric(cents),
+        amount: Number(centsToNumeric(cents)),
         expense_date: form.expense_date,
       });
       if (error) throw error;
