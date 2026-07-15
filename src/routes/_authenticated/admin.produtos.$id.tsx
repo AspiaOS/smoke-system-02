@@ -76,6 +76,8 @@ function ProductDetail() {
         active: boolean;
         visible: boolean;
         featured: boolean;
+        created_at: string;
+        updated_at: string;
         variations: Variation[];
       };
     },
@@ -319,6 +321,11 @@ function ProductDetail() {
           </div>
         </CardContent>
       </Card>
+
+      <div className="flex flex-wrap gap-6 text-xs text-muted-foreground">
+        <span>Criado em: {new Date(product.created_at).toLocaleString("pt-BR")}</span>
+        <span>Última alteração: {new Date(product.updated_at).toLocaleString("pt-BR")}</span>
+      </div>
     </div>
   );
 }
