@@ -242,14 +242,30 @@ function DemoPage() {
               </div>
             )}
 
-            <div className="flex justify-end">
+            <div className="flex flex-wrap justify-end gap-2">
               <Button variant="outline" size="sm" asChild>
-                <Link to="/admin">Ir para o painel</Link>
+                <Link to="/admin">Dashboard</Link>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/admin/pedidos">Pedidos</Link>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/admin/clientes">Clientes</Link>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/admin/vendas">Vendas</Link>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/admin/despesas">Despesas</Link>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/admin/estoque">Estoque</Link>
               </Button>
             </div>
           </CardContent>
         </Card>
       )}
+
 
       <AlertDialog open={confirmReset} onOpenChange={setConfirmReset}>
         <AlertDialogContent>
