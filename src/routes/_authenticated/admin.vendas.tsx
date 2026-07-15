@@ -148,7 +148,7 @@ function SalesPage() {
         <p className="text-sm text-muted-foreground">Acompanhe as vendas já aceitas da loja.</p>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="relative min-w-[220px] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -159,7 +159,7 @@ function SalesPage() {
           />
         </div>
         <Select value={period} onValueChange={(v) => setPeriod(v as PeriodKey)}>
-          <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="today">Hoje</SelectItem>
             <SelectItem value="7d">7 dias</SelectItem>
@@ -168,9 +168,11 @@ function SalesPage() {
           </SelectContent>
         </Select>
         <Select value={payment} onValueChange={(v) => setPayment(v as PaymentKey)}>
-          <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-[190px]">
+            <span className="truncate">Pagamento: <SelectValue /></span>
+          </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos pagamentos</SelectItem>
+            <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="pix">Pix</SelectItem>
             <SelectItem value="cash">Dinheiro</SelectItem>
             <SelectItem value="debit">Débito</SelectItem>
@@ -178,7 +180,7 @@ function SalesPage() {
           </SelectContent>
         </Select>
         <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
-          <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-[160px] sm:ml-auto"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="recent">Mais recentes</SelectItem>
             <SelectItem value="total">Maior valor</SelectItem>
@@ -187,17 +189,17 @@ function SalesPage() {
         </Select>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <SummaryCard label="Receita" value={formatBRL(totals.revenue / 100)} />
         <SummaryCard label="Custo" value={formatBRL(totals.cost / 100)} />
         <SummaryCard
           label="Lucro bruto"
           value={formatBRL(totals.profit / 100)}
-          hint={`${totals.margin.toFixed(1)}% margem`}
           highlight
         />
         <SummaryCard label="Vendas" value={String(totals.count)} />
         <SummaryCard label="Ticket médio" value={formatBRL(totals.avg / 100)} />
+        <SummaryCard label="Margem média" value={`${totals.margin.toFixed(1)}%`} />
       </div>
 
       <Card>
