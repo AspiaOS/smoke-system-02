@@ -9,6 +9,47 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/p/$id")({
   component: ProductPage,
+  loader: async ({ params }) => {
+    const { data } = await supabase
+      .from("public_catalog")
+      .select("product_name,brand,description,images,price")
+      .eq("product_id", params.id)
+      .order("price", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    return { meta: data };
+  },
+  head: ({ loaderData, params }) => {
+    const m = loaderData?.meta;
+    if (!m) {
+      return {
+        meta: [
+          { title: "Produto — Smoke" },
+          { name: "robots", content: "noindex" },
+        ],
+        links: [{ rel: "canonical", href: `/p/${params.id}` }],
+      };
+    }
+    const title = `${m.product_name}${m.brand ? " · " + m.brand : ""} — Smoke`;
+    const desc = (m.description ?? `Peça ${m.product_name} pelo WhatsApp na Smoke.`).slice(0, 160);
+    const img = m.images?.[0];
+    return {
+      meta: [
+        { title },
+        { name: "description", content: desc },
+        { property: "og:title", content: title },
+        { property: "og:description", content: desc },
+        { property: "og:type", content: "product" },
+        { property: "og:url", content: `/p/${params.id}` },
+        ...(img ? [
+          { property: "og:image", content: img },
+          { name: "twitter:image", content: img },
+        ] : []),
+        { name: "twitter:card", content: img ? "summary_large_image" : "summary" },
+      ],
+      links: [{ rel: "canonical", href: `/p/${params.id}` }],
+    };
+  },
 });
 
 type Row = {
