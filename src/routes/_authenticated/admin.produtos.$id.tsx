@@ -76,6 +76,8 @@ function ProductDetail() {
         active: boolean;
         visible: boolean;
         featured: boolean;
+        created_at: string;
+        updated_at: string;
         variations: Variation[];
       };
     },
