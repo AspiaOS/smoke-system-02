@@ -38,8 +38,11 @@ export async function runReset(supabase: Client): Promise<{
     let count = 0;
     for (let i = 0; i < ids.length; i += 300) {
       const chunk = ids.slice(i, i + 300);
-      // @ts-expect-error — .in() union too narrow across tables; runtime is fine.
-      const { error, data } = await supabaseAdmin.from(table).delete().in("id", chunk).select("id");
+      // Union type across tables is too narrow at .in(); cast to any is safe.
+
+      const { error, data } = await (supabaseAdmin.from(table).delete() as unknown as {
+        in: (col: string, vals: readonly (string | number)[]) => { select: (c: string) => Promise<{ error: { message: string } | null; data: { id: string | number }[] | null }> };
+      }).in("id", chunk).select("id");
       if (error) throw new Error(`delete ${table}:${error.message}`);
       count += (data ?? []).length;
     }
