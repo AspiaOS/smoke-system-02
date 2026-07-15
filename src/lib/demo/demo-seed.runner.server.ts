@@ -143,10 +143,18 @@ export async function runSeed(
     type VarSpec = {
       product_id: string; name: string; price: number; cost: number;
       min_stock: number; active: boolean; stock: number;
-      __initialStock: number; __keepZero: boolean;
+      __initialStock: number; __keepZero: boolean; __productSellable: boolean;
     };
     const varSpecs: VarSpec[] = [];
     insertedProducts.forEach((p, pi) => {
+      const spec = products[pi];
+      // Vendável só se o produto estiver ativo, visível e em categoria ativa
+      // (create_public_order exige v.active AND p.active AND p.visible).
+      const productSellable =
+        spec.active === true &&
+        spec.visible === true &&
+        !spec.__inNovi &&
+        !(arqCat && spec.category_id === arqCat.id);
       const varCount = rng.int(2, 4);
       const flavors = rng.shuffle(VARIATION_FLAVORS).slice(0, varCount);
       flavors.forEach((flavor, vi) => {
@@ -175,12 +183,13 @@ export async function runSeed(
           stock: 0,
           __initialStock: initial,
           __keepZero: keepZero,
+          __productSellable: productSellable,
         });
       });
     });
 
     const varInsertPayload = varSpecs.map(
-      ({ __initialStock: _s, __keepZero: _k, ...rest }) => rest,
+      ({ __initialStock: _s, __keepZero: _k, __productSellable: _ps, ...rest }) => rest,
     );
     const { data: insertedVars, error: varErr } = await supabase
       .from("variations")
