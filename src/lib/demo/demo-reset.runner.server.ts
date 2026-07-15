@@ -1,7 +1,7 @@
 // Runner do reset demo — server-only.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { findActiveManifest, type ManifestEntries } from "./demo-manifest.server";
+import type { ManifestEntries } from "./demo-manifest.server";
 import { assertDemoEnabled } from "./demo-guard.server";
 
 type Client = SupabaseClient<Database>;
