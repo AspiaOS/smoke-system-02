@@ -50,7 +50,7 @@ export type Profile = "small" | "full";
 
 export const PROFILE_SIZES = {
   small: {
-    categories: 6,
+    categories: 8,
     products: 12,
     neighborhoods: 6,
     orders: 30,
