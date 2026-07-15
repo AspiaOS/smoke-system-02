@@ -203,11 +203,48 @@ export async function runValidate(
       (data ?? []).forEach((o) => { if (o.customer_id) counts.set(o.customer_id, (counts.get(o.customer_id) ?? 0) + 1); });
       return Array.from(counts.values()).some((c) => c >= 2);
     }},
+    { name: "Cliente recorrente (>=2 vendas aceitas)", check: async () => {
+      if (entries.sales.length === 0) return false;
+      const { data } = await supabase.from("sales").select("customer_id").in("id", entries.sales);
+      const counts = new Map<string, number>();
+      (data ?? []).forEach((s) => { if (s.customer_id) counts.set(s.customer_id, (counts.get(s.customer_id) ?? 0) + 1); });
+      return Array.from(counts.values()).some((c) => c >= 2);
+    }},
+    { name: "Cliente sumido (última venda >60 dias)", check: async () => {
+      if (entries.sales.length === 0) return false;
+      const { data } = await supabase.from("sales").select("customer_id, created_at").in("id", entries.sales);
+      const last = new Map<string, number>();
+      (data ?? []).forEach((s) => {
+        if (!s.customer_id) return;
+        const t = new Date(s.created_at as string).getTime();
+        last.set(s.customer_id, Math.max(last.get(s.customer_id) ?? 0, t));
+      });
+      const cutoff = Date.now() - 60 * 86_400_000;
+      return Array.from(last.values()).some((t) => t < cutoff);
+    }},
+    { name: "Vendas em múltiplas formas de pagamento", check: async () => {
+      if (entries.sales.length === 0) return false;
+      const { data } = await supabase.from("sales").select("payment_method").in("id", entries.sales);
+      const set = new Set((data ?? []).map((s) => s.payment_method));
+      return set.size >= 3;
+    }},
+    { name: "Despesas em múltiplas categorias", check: async () => {
+      if (entries.expenses.length === 0) return false;
+      const { data } = await supabase.from("expenses").select("category").in("id", entries.expenses);
+      const set = new Set((data ?? []).map((e) => e.category));
+      return set.size >= 4;
+    }},
+    { name: "sales.count == accepted orders.count", check: async () => {
+      const { data } = await supabase.from("orders").select("status").in("id", entries.orders);
+      const acc = (data ?? []).filter((o) => o.status === "accepted").length;
+      return acc === entries.sales.length;
+    }},
     { name: "Histórico com entrada, ajuste e sale_accept", check: async () => {
       const { data } = await supabase.from("stock_movements").select("type").in("id", entries.stock_movements);
       const s = new Set((data ?? []).map((m) => m.type));
       return s.has("entry") && s.has("adjustment") && s.has("sale_accept");
     }},
+
   ];
 
   const scenarios = { found: 0, total: scenarioChecks.length };
