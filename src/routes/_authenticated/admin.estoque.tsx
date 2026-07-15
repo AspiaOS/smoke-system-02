@@ -82,7 +82,7 @@ function StockPage() {
       const { error } = await supabase.rpc("stock_entry", {
         _variation_id: modal.variation.id,
         _qty: n,
-        _note: note || null,
+        _note: note || undefined,
       });
       if (error) throw error;
     },

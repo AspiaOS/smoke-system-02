@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_authenticated/admin/frete")({
 type Neighborhood = {
   id: string;
   name: string;
-  delivery_fee: string;
+  delivery_fee: number;
   active: boolean;
 };
 
@@ -59,7 +59,7 @@ function ShippingPage() {
   });
 
   const update = useMutation({
-    mutationFn: async (patch: Partial<Neighborhood> & { id: string }) => {
+    mutationFn: async (patch: { id: string; name?: string; delivery_fee?: number; active?: boolean }) => {
       const { id, ...rest } = patch;
       const { error } = await supabase.from("neighborhoods").update(rest).eq("id", id);
       if (error) throw error;
@@ -122,8 +122,9 @@ function ShippingPage() {
                   step="0.01"
                   defaultValue={n.delivery_fee}
                   onBlur={(e) => {
-                    if (e.target.value !== n.delivery_fee)
-                      update.mutate({ id: n.id, delivery_fee: e.target.value });
+                    const v = Number(e.target.value);
+                    if (Number.isFinite(v) && v !== n.delivery_fee)
+                      update.mutate({ id: n.id, delivery_fee: v });
                   }}
                 />
                 <span className="text-xs text-muted-foreground">{formatBRL(n.delivery_fee)}</span>
