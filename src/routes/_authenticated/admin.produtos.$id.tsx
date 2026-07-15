@@ -25,11 +25,30 @@ export const Route = createFileRoute("/_authenticated/admin/produtos/$id")({
 type Variation = {
   id: string;
   name: string;
-  price: string;
-  cost: string;
+  price: number;
+  cost: number;
   stock: number;
   min_stock: number;
   active: boolean;
+};
+
+type ProductPatch = {
+  name?: string;
+  brand?: string | null;
+  description?: string | null;
+  category_id?: string;
+  active?: boolean;
+  visible?: boolean;
+  featured?: boolean;
+  images?: string[];
+};
+
+type VariationPatch = {
+  name?: string;
+  price?: number;
+  cost?: number;
+  min_stock?: number;
+  active?: boolean;
 };
 
 function ProductDetail() {
@@ -76,7 +95,7 @@ function ProductDetail() {
   });
 
   const patchProduct = useMutation({
-    mutationFn: async (patch: Record<string, unknown>) => {
+    mutationFn: async (patch: ProductPatch) => {
       const { error } = await supabase.from("products").update(patch).eq("id", id);
       if (error) throw error;
     },
@@ -85,11 +104,10 @@ function ProductDetail() {
   });
 
   const patchVariation = useMutation({
-    mutationFn: async (v: Partial<Variation> & { id: string; oldPrice?: string; oldCost?: string }) => {
+    mutationFn: async (v: VariationPatch & { id: string; oldPrice?: number; oldCost?: number }) => {
       const { id: vid, oldPrice, oldCost, ...patch } = v;
       const { error } = await supabase.from("variations").update(patch).eq("id", vid);
       if (error) throw error;
-      // Audit log for price/cost changes
       if ((patch.price !== undefined && patch.price !== oldPrice) ||
           (patch.cost !== undefined && patch.cost !== oldCost)) {
         const { data: p } = await supabase.from("products").select("store_id").eq("id", id).single();
