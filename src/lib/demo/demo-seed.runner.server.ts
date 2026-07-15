@@ -291,17 +291,15 @@ export async function runSeed(
       const fate = fates[i];
       const isSumido = i < sizes.sumidos;
 
-      // Datas coerentes com o fate
+      // Datas: pedidos do lote distribuídos nos últimos 30 dias.
+      // Sumidos ficam >60 dias para o cenário de "cliente sumido".
       let daysAgo: number;
       if (isSumido) {
-        daysAgo = rng.int(70, 115); // sumido: >60 dias
+        daysAgo = rng.int(70, 115);
       } else if (fate === "pending") {
-        daysAgo = rng.int(0, 2); // pendentes: recentes
-      } else if (fate === "cancel") {
-        daysAgo = rng.int(0, 90);
+        daysAgo = rng.int(0, 2); // pendentes sempre recentes
       } else {
-        // accept "normal": 0..60 dias — garante clientes ativos recentes
-        daysAgo = rng.int(0, 60);
+        daysAgo = rng.int(0, 29); // accepted + cancelled espalhados em 30 dias
       }
 
       // Telefone: sumidos usam pool próprio; senão 40% recorrente
