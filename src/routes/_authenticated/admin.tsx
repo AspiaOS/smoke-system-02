@@ -15,6 +15,7 @@ import {
   Settings,
   LogOut,
   Truck,
+  ScrollText,
   type LucideIcon,
 } from "lucide-react";
 
