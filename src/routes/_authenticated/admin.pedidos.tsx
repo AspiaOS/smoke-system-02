@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -23,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { formatBRL } from "@/lib/money";
 import { toast } from "sonner";
-import { Package, RefreshCw, Search } from "lucide-react";
+import { Package, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/pedidos")({
   component: OrdersPage,
@@ -74,6 +75,7 @@ function OrdersPage() {
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
   const [sort, setSort] = useState<SortKey>("recent");
+  const [newOpen, setNewOpen] = useState(false);
   const qc = useQueryClient();
 
   const { data: allOrders = [], isLoading, refetch, isFetching } = useQuery({
@@ -158,37 +160,53 @@ function OrdersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Pedidos</h1>
           <p className="text-sm text-muted-foreground">
-            Gerencie os pedidos e acompanhe suas vendas. Ao aceitar, o estoque será atualizado automaticamente e a venda será registrada.
+            Gerencie os pedidos e acompanhe suas vendas. Ao aceitar, o estoque é atualizado e a venda registrada.
           </p>
         </div>
-        <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
-          <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-          Atualizar
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={() => setNewOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Novo pedido
+          </Button>
+          <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+            Atualizar
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {STATUS_TABS.map((s) => (
-          <button
-            key={s.value}
-            onClick={() => setTab(s.value)}
-            className={`rounded-full px-4 py-1.5 text-sm transition ${
-              tab === s.value
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {s.label} {counts[s.value]}
-          </button>
-        ))}
+        {STATUS_TABS.map((s) => {
+          const active = tab === s.value;
+          return (
+            <button
+              key={s.value}
+              onClick={() => setTab(s.value)}
+              className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm transition ${
+                active
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {s.label}
+              <span
+                className={`inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-xs ${
+                  active ? "bg-primary-foreground/20 text-primary-foreground" : "bg-background text-foreground"
+                }`}
+              >
+                {counts[s.value]}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <div className="relative flex-1 min-w-[220px]">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <div className="relative flex-1 sm:min-w-[220px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             className="pl-9"
@@ -197,29 +215,31 @@ function OrdersPage() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as DateFilter)}>
-          <SelectTrigger className="w-[140px]"><SelectValue placeholder="Data" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas as datas</SelectItem>
-            <SelectItem value="today">Hoje</SelectItem>
-            <SelectItem value="7d">7 dias</SelectItem>
-            <SelectItem value="30d">30 dias</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
-          <SelectTrigger className="w-[170px]"><SelectValue placeholder="Ordenar" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="recent">Mais recentes</SelectItem>
-            <SelectItem value="highest">Maior valor</SelectItem>
-            <SelectItem value="lowest">Menor valor</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex gap-2">
+          <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as DateFilter)}>
+            <SelectTrigger className="w-full sm:w-[140px] focus:ring-0 focus:ring-offset-0"><SelectValue placeholder="Data" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as datas</SelectItem>
+              <SelectItem value="today">Hoje</SelectItem>
+              <SelectItem value="7d">7 dias</SelectItem>
+              <SelectItem value="30d">30 dias</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+            <SelectTrigger className="w-full sm:w-[170px] focus:ring-0 focus:ring-offset-0"><SelectValue placeholder="Ordenar" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recent">Mais recentes</SelectItem>
+              <SelectItem value="highest">Maior valor</SelectItem>
+              <SelectItem value="lowest">Menor valor</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {isLoading && <p className="text-sm text-muted-foreground">Carregando…</p>}
 
       {!isLoading && filtered.length === 0 && (
-        <EmptyState tab={tab} onRefresh={() => refetch()} />
+        <EmptyState tab={tab} onCreate={() => setNewOpen(true)} />
       )}
 
       <div className="space-y-3">
@@ -256,11 +276,13 @@ function OrdersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <NewOrderDialog open={newOpen} onOpenChange={setNewOpen} />
     </div>
   );
 }
 
-function EmptyState({ tab, onRefresh }: { tab: OrderStatus; onRefresh: () => void }) {
+function EmptyState({ tab, onCreate }: { tab: OrderStatus; onCreate: () => void }) {
   const copy =
     tab === "pending"
       ? {
@@ -270,7 +292,7 @@ function EmptyState({ tab, onRefresh }: { tab: OrderStatus; onRefresh: () => voi
       : tab === "accepted"
         ? {
             title: "Nenhum pedido aceito",
-            desc: "Os pedidos aceitos e suas vendas registradas aparecerão nesta lista.",
+            desc: "Os pedidos aceitos e as vendas registradas aparecerão aqui.",
           }
         : {
             title: "Nenhum pedido cancelado",
@@ -279,23 +301,18 @@ function EmptyState({ tab, onRefresh }: { tab: OrderStatus; onRefresh: () => voi
 
   return (
     <Card>
-      <CardContent className="flex flex-col items-center justify-center gap-4 py-16 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-          <Package className="h-8 w-8 text-muted-foreground" />
+      <CardContent className="flex flex-col items-center justify-center gap-3 py-10 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+          <Package className="h-6 w-6 text-muted-foreground" />
         </div>
         <div className="space-y-1">
-          <h3 className="text-lg font-semibold">{copy.title}</h3>
+          <h3 className="text-base font-semibold">{copy.title}</h3>
           <p className="max-w-sm text-sm text-muted-foreground">{copy.desc}</p>
         </div>
-        <div className="flex flex-wrap justify-center gap-2">
-          <Button onClick={onRefresh}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Atualizar pedidos
-          </Button>
-          <Button variant="outline" asChild>
-            <Link to="/admin/produtos">Ver produtos</Link>
-          </Button>
-        </div>
+        <Button variant="outline" onClick={onCreate}>
+          <Plus className="mr-2 h-4 w-4" />
+          Criar pedido manual
+        </Button>
       </CardContent>
     </Card>
   );
@@ -360,5 +377,232 @@ function OrderCard({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+// ---------- Novo pedido manual ----------
+
+type CartItem = {
+  variation_id: string;
+  product_name: string;
+  variation_name: string;
+  unit_price: number;
+  quantity: number;
+  stock: number;
+};
+
+function NewOrderDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  const qc = useQueryClient();
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [neighborhoodId, setNeighborhoodId] = useState<string>("");
+  const [payment, setPayment] = useState<string>("cash");
+  const [notes, setNotes] = useState("");
+  const [productSearch, setProductSearch] = useState("");
+  const [cart, setCart] = useState<CartItem[]>([]);
+
+  const { data: neighborhoods = [] } = useQuery({
+    queryKey: ["neighborhoods", "active"],
+    enabled: open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("neighborhoods")
+        .select("id,name,delivery_fee")
+        .eq("active", true)
+        .order("name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: variations = [] } = useQuery({
+    queryKey: ["variations", "search", productSearch],
+    enabled: open && productSearch.trim().length > 0,
+    queryFn: async () => {
+      const q = productSearch.trim();
+      const { data, error } = await supabase
+        .from("variations")
+        .select("id,name,price,stock,active,product:products!inner(id,name,active,visible)")
+        .eq("active", true)
+        .ilike("products.name", `%${q}%`)
+        .limit(15);
+      if (error) throw error;
+      return (data ?? []) as unknown as Array<{
+        id: string; name: string; price: number; stock: number;
+        product: { id: string; name: string; active: boolean; visible: boolean };
+      }>;
+    },
+  });
+
+  const neighborhood = neighborhoods.find((n) => n.id === neighborhoodId);
+  const subtotal = cart.reduce((s, i) => s + i.unit_price * i.quantity, 0);
+  const deliveryFee = Number(neighborhood?.delivery_fee ?? 0);
+  const total = subtotal + deliveryFee;
+
+  const reset = () => {
+    setName(""); setPhone(""); setAddress(""); setNeighborhoodId("");
+    setPayment("cash"); setNotes(""); setProductSearch(""); setCart([]);
+  };
+
+  const addToCart = (v: typeof variations[number]) => {
+    setCart((c) => {
+      const existing = c.find((i) => i.variation_id === v.id);
+      if (existing) {
+        return c.map((i) => i.variation_id === v.id
+          ? { ...i, quantity: Math.min(i.stock, i.quantity + 1) }
+          : i);
+      }
+      return [...c, {
+        variation_id: v.id,
+        product_name: v.product.name,
+        variation_name: v.name,
+        unit_price: Number(v.price),
+        quantity: 1,
+        stock: v.stock,
+      }];
+    });
+    setProductSearch("");
+  };
+
+  const createMut = useMutation({
+    mutationFn: async () => {
+      if (!name || !phone || !address || !neighborhoodId) throw new Error("Preencha os dados do cliente");
+      if (cart.length === 0) throw new Error("Adicione ao menos um produto");
+      const { error } = await supabase.rpc("create_public_order", {
+        p_customer_name: name,
+        p_customer_phone: phone,
+        p_address: address,
+        p_neighborhood_id: neighborhoodId,
+        p_payment_method: payment as never,
+        p_items: cart.map((i) => ({ variation_id: i.variation_id, quantity: i.quantity })) as never,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Pedido criado como pendente.");
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      reset();
+      onOpenChange(false);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro"),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) reset(); }}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Novo pedido manual</DialogTitle>
+          <DialogDescription>Ao confirmar, o pedido entra como pendente. Aceite depois para atualizar o estoque e registrar a venda.</DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-5">
+          <section className="space-y-2">
+            <h4 className="text-sm font-semibold">1. Cliente</h4>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Input placeholder="Nome" value={name} onChange={(e) => setName(e.target.value)} />
+              <Input placeholder="Telefone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            </div>
+            <Input placeholder="Endereço" value={address} onChange={(e) => setAddress(e.target.value)} />
+            <Select value={neighborhoodId} onValueChange={setNeighborhoodId}>
+              <SelectTrigger><SelectValue placeholder="Bairro" /></SelectTrigger>
+              <SelectContent>
+                {neighborhoods.map((n) => (
+                  <SelectItem key={n.id} value={n.id}>
+                    {n.name} · frete {formatBRL(Number(n.delivery_fee))}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </section>
+
+          <section className="space-y-2">
+            <h4 className="text-sm font-semibold">2. Produtos</h4>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="pl-9"
+                placeholder="Buscar produto pelo nome..."
+                value={productSearch}
+                onChange={(e) => setProductSearch(e.target.value)}
+              />
+            </div>
+            {productSearch && variations.length > 0 && (
+              <div className="rounded-md border bg-popover divide-y">
+                {variations.map((v) => (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => addToCart(v)}
+                    className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-muted"
+                  >
+                    <span>
+                      {v.product.name} <span className="text-muted-foreground">— {v.name}</span>
+                    </span>
+                    <span className="tabular-nums text-xs text-muted-foreground">
+                      {formatBRL(Number(v.price))} · estoque {v.stock}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {cart.length > 0 && (
+              <ul className="space-y-2 rounded-md border p-2">
+                {cart.map((i, idx) => (
+                  <li key={i.variation_id} className="flex items-center gap-2 text-sm">
+                    <div className="flex-1">
+                      <p>{i.product_name} <span className="text-muted-foreground">— {i.variation_name}</span></p>
+                      <p className="text-xs text-muted-foreground">Estoque: {i.stock} · {formatBRL(i.unit_price)}</p>
+                    </div>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={i.stock}
+                      value={i.quantity}
+                      onChange={(e) => {
+                        const q = Math.max(1, Math.min(i.stock, Number(e.target.value) || 1));
+                        setCart((c) => c.map((x, xi) => xi === idx ? { ...x, quantity: q } : x));
+                      }}
+                      className="w-20"
+                    />
+                    <span className="w-24 text-right tabular-nums">{formatBRL(i.unit_price * i.quantity)}</span>
+                    <Button variant="ghost" size="icon" onClick={() => setCart((c) => c.filter((_, xi) => xi !== idx))}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section className="space-y-2">
+            <h4 className="text-sm font-semibold">3. Pagamento</h4>
+            <Select value={payment} onValueChange={setPayment}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="cash">Dinheiro</SelectItem>
+                <SelectItem value="pix">PIX</SelectItem>
+                <SelectItem value="card">Cartão</SelectItem>
+              </SelectContent>
+            </Select>
+            <Textarea placeholder="Observações (opcional)" value={notes} onChange={(e) => setNotes(e.target.value)} />
+          </section>
+
+          <section className="rounded-md border p-3 text-sm">
+            <h4 className="mb-2 font-semibold">4. Resumo</h4>
+            <div className="flex justify-between"><span>Subtotal</span><span className="tabular-nums">{formatBRL(subtotal)}</span></div>
+            <div className="flex justify-between"><span>Frete</span><span className="tabular-nums">{formatBRL(deliveryFee)}</span></div>
+            <div className="mt-1 flex justify-between border-t pt-1 font-semibold"><span>Total</span><span className="tabular-nums">{formatBRL(total)}</span></div>
+          </section>
+        </div>
+
+        <DialogFooter className="flex-col-reverse gap-2 sm:flex-row">
+          <Button variant="outline" onClick={() => { onOpenChange(false); reset(); }}>Cancelar</Button>
+          <Button onClick={() => createMut.mutate()} disabled={createMut.isPending}>
+            Salvar como pendente
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
