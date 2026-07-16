@@ -793,8 +793,13 @@ export type Database = {
           p_payment_method: Database["public"]["Enums"]["payment_method"]
         }
         Returns: {
+          address: string
+          customer_name: string
+          customer_phone: string
           delivery_fee: number
+          neighborhood_name: string
           order_id: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
           subtotal: number
           total: number
           whatsapp_number: string
