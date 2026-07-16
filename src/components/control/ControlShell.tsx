@@ -20,7 +20,7 @@ export function ControlShell({ children, title }: { children: ReactNode; title: 
   }
 
   return (
-    <div className="min-h-screen bg-black text-foreground">
+    <div className="min-h-screen bg-surface-contrast text-foreground">
       <div className="grid grid-cols-[240px_1fr] min-h-screen">
         <aside className="border-r border-border bg-card flex flex-col">
           <div className="px-5 py-6 border-b border-border">

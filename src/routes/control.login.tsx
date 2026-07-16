@@ -42,7 +42,7 @@ function ControlLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-foreground flex items-center justify-center px-4">
+    <div className="min-h-screen bg-surface-contrast text-foreground flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-2 mb-8">
           <ShieldCheck className="h-6 w-6 text-primary" />
@@ -60,7 +60,7 @@ function ControlLoginPage() {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-black border border-border rounded px-3 py-2 text-sm focus:border-primary focus:outline-none"
+              className="w-full bg-surface-contrast border border-border rounded px-3 py-2 text-sm focus:border-primary focus:outline-none"
             />
           </div>
           <div>
@@ -71,7 +71,7 @@ function ControlLoginPage() {
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-black border border-border rounded px-3 py-2 text-sm focus:border-primary focus:outline-none"
+              className="w-full bg-surface-contrast border border-border rounded px-3 py-2 text-sm focus:border-primary focus:outline-none"
             />
           </div>
           {error ? (

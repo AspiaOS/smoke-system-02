@@ -64,12 +64,12 @@ function AuditPage() {
                     {row.action}
                   </span>
                 </td>
-                <td className="px-4 py-3 font-mono text-xs text-neutral-300">
+                <td className="px-4 py-3 font-mono text-xs text-foreground">
                   <div>{row.target_type}</div>
                   <div className="text-muted-foreground">{row.target_id}</div>
                 </td>
-                <td className="px-4 py-3 text-neutral-300">{row.actor_email ?? "—"}</td>
-                <td className="px-4 py-3 text-neutral-300">{row.store_name ?? "—"}</td>
+                <td className="px-4 py-3 text-foreground">{row.actor_email ?? "—"}</td>
+                <td className="px-4 py-3 text-foreground">{row.store_name ?? "—"}</td>
                 <td className="px-4 py-3">
                   <pre className="text-xs text-muted-foreground whitespace-pre-wrap break-all max-w-md">
                     {row.payload && Object.keys(row.payload as object).length > 0

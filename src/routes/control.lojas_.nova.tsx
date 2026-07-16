@@ -62,7 +62,7 @@ function NovaLojaPage() {
           />
         </div>
         <div className="pt-4 border-t border-border">
-          <h2 className="text-sm font-medium text-neutral-300 mb-3">Dono da loja</h2>
+          <h2 className="text-sm font-medium text-foreground mb-3">Dono da loja</h2>
           <div className="space-y-4">
             <div>
               <Label htmlFor="ownerName">Nome</Label>

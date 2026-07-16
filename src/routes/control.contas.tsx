@@ -30,7 +30,7 @@ export const Route = createFileRoute("/control/contas")({
 const STATUS_COLORS: Record<string, string> = {
   active: "text-emerald-300 bg-emerald-500/10 border-emerald-500/30",
   suspended: "text-amber-300 bg-amber-500/10 border-amber-500/30",
-  archived: "text-muted-foreground bg-neutral-500/10 border-neutral-600/30",
+  archived: "text-muted-foreground bg-muted border-border",
 };
 
 function ContasPage() {
