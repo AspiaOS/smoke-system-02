@@ -19,11 +19,23 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
+  async function routeAfterAuth(userId: string) {
+    const { data } = await supabase
+      .from("platform_admins")
+      .select("active")
+      .eq("user_id", userId)
+      .eq("active", true)
+      .maybeSingle();
+    navigate({ to: data ? "/control" : "/admin", replace: true });
+  }
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/admin", replace: true });
+      if (data.session) void routeAfterAuth(data.session.user.id);
     });
-  }, [navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   function validate(): boolean {
     const next: { email?: string; password?: string } = {};
