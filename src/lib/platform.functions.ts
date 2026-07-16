@@ -24,18 +24,57 @@ async function logPlatform(
   admin: import("@supabase/supabase-js").SupabaseClient,
   actorId: string,
   action: string,
-  entity: string,
-  entityId: string,
+  targetType: string,
+  targetId: string,
   payload: Record<string, unknown> = {},
+  storeId: string | null = null,
 ) {
   await admin.from("platform_audit_logs").insert({
     actor_id: actorId,
     action,
-    entity,
-    entity_id: entityId,
+    target_type: targetType,
+    target_id: targetId,
     payload,
+    store_id: storeId,
   });
 }
+
+export const listPlatformAuditLogs = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { limit?: number; action?: string; targetType?: string } | undefined) => d ?? {})
+  .handler(async ({ data, context }) => {
+    await assertPlatformAdmin(context.supabase, context.userId, "audit.view");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let q = supabaseAdmin
+      .from("platform_audit_logs")
+      .select("id, action, target_type, target_id, payload, actor_id, store_id, created_at")
+      .order("created_at", { ascending: false })
+      .limit(Math.min(data.limit ?? 200, 500));
+    if (data.action) q = q.eq("action", data.action);
+    if (data.targetType) q = q.eq("target_type", data.targetType);
+    const { data: rows, error } = await q;
+    if (error) throw new Response(error.message, { status: 400 });
+
+    const actorIds = Array.from(new Set((rows ?? []).map((r) => r.actor_id).filter(Boolean))) as string[];
+    const storeIds = Array.from(new Set((rows ?? []).map((r) => r.store_id).filter(Boolean))) as string[];
+    const actorMap = new Map<string, string>();
+    if (actorIds.length > 0) {
+      const { data: users } = await supabaseAdmin.auth.admin.listUsers({ perPage: 200 });
+      for (const u of users?.users ?? []) {
+        if (actorIds.includes(u.id)) actorMap.set(u.id, u.email ?? u.id);
+      }
+    }
+    const storeMap = new Map<string, string>();
+    if (storeIds.length > 0) {
+      const { data: stores } = await supabaseAdmin.from("stores").select("id, name").in("id", storeIds);
+      for (const s of stores ?? []) storeMap.set(s.id, s.name);
+    }
+    return (rows ?? []).map((r) => ({
+      ...r,
+      actor_email: r.actor_id ? actorMap.get(r.actor_id) ?? null : null,
+      store_name: r.store_id ? storeMap.get(r.store_id) ?? null : null,
+    }));
+  });
 
 export const createStore = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
