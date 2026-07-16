@@ -326,7 +326,18 @@ function StockPage() {
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <MagicBento
+        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+        enableStars
+        enableSpotlight
+        enableBorderGlow
+        enableTilt={false}
+        enableMagnetism={false}
+        clickEffect
+        spotlightRadius={400}
+        particleCount={8}
+        glowColor="132, 0, 255"
+      >
         <SummaryCard icon={<Package className="h-4 w-4" />} label="Itens em estoque" value={summary.totalItems.toString()} />
         <SummaryCard icon={<Layers className="h-4 w-4" />} label="Variações ativas" value={summary.activeVars.toString()} />
         <SummaryCard
@@ -336,7 +347,7 @@ function StockPage() {
           highlight={summary.low > 0}
         />
         <SummaryCard icon={<Wallet className="h-4 w-4" />} label="Valor em estoque" value={formatBRL(summary.value)} />
-      </div>
+      </MagicBento>
 
       <Tabs defaultValue="atual">
         <TabsList>
