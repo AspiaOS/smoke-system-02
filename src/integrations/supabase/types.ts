@@ -651,6 +651,7 @@ export type Database = {
           name: string
           price: number
           product_id: string
+          reserved_quantity: number
           stock: number
           updated_at: string
         }
@@ -663,6 +664,7 @@ export type Database = {
           name: string
           price: number
           product_id: string
+          reserved_quantity?: number
           stock?: number
           updated_at?: string
         }
@@ -675,6 +677,7 @@ export type Database = {
           name?: string
           price?: number
           product_id?: string
+          reserved_quantity?: number
           stock?: number
           updated_at?: string
         }
@@ -747,6 +750,7 @@ export type Database = {
           whatsapp_number: string
         }[]
       }
+      expire_pending_orders: { Args: { _older_than?: string }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

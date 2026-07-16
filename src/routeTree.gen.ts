@@ -26,6 +26,7 @@ import { Route as AuthenticatedAdminClientesRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminCategoriasRouteImport } from './routes/_authenticated/admin.categorias'
 import { Route as AuthenticatedAdminAuditoriaRouteImport } from './routes/_authenticated/admin.auditoria'
 import { Route as AuthenticatedAdminProdutosIndexRouteImport } from './routes/_authenticated/admin.produtos.index'
+import { Route as ApiPublicCronExpireOrdersRouteImport } from './routes/api/public/cron/expire-orders'
 import { Route as AuthenticatedAdminProdutosIdRouteImport } from './routes/_authenticated/admin.produtos.$id'
 
 const CheckoutRoute = CheckoutRouteImport.update({
@@ -121,6 +122,12 @@ const AuthenticatedAdminProdutosIndexRoute =
     path: '/produtos/',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const ApiPublicCronExpireOrdersRoute =
+  ApiPublicCronExpireOrdersRouteImport.update({
+    id: '/api/public/cron/expire-orders',
+    path: '/api/public/cron/expire-orders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedAdminProdutosIdRoute =
   AuthenticatedAdminProdutosIdRouteImport.update({
     id: '/produtos/$id',
@@ -145,6 +152,7 @@ export interface FileRoutesByFullPath {
   '/admin/vendas': typeof AuthenticatedAdminVendasRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/produtos/$id': typeof AuthenticatedAdminProdutosIdRoute
+  '/api/public/cron/expire-orders': typeof ApiPublicCronExpireOrdersRoute
   '/admin/produtos/': typeof AuthenticatedAdminProdutosIndexRoute
 }
 export interface FileRoutesByTo {
@@ -163,6 +171,7 @@ export interface FileRoutesByTo {
   '/admin/vendas': typeof AuthenticatedAdminVendasRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/produtos/$id': typeof AuthenticatedAdminProdutosIdRoute
+  '/api/public/cron/expire-orders': typeof ApiPublicCronExpireOrdersRoute
   '/admin/produtos': typeof AuthenticatedAdminProdutosIndexRoute
 }
 export interface FileRoutesById {
@@ -184,6 +193,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/vendas': typeof AuthenticatedAdminVendasRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/produtos/$id': typeof AuthenticatedAdminProdutosIdRoute
+  '/api/public/cron/expire-orders': typeof ApiPublicCronExpireOrdersRoute
   '/_authenticated/admin/produtos/': typeof AuthenticatedAdminProdutosIndexRoute
 }
 export interface FileRouteTypes {
@@ -205,6 +215,7 @@ export interface FileRouteTypes {
     | '/admin/vendas'
     | '/admin/'
     | '/admin/produtos/$id'
+    | '/api/public/cron/expire-orders'
     | '/admin/produtos/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '/admin/vendas'
     | '/admin'
     | '/admin/produtos/$id'
+    | '/api/public/cron/expire-orders'
     | '/admin/produtos'
   id:
     | '__root__'
@@ -243,6 +255,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/vendas'
     | '/_authenticated/admin/'
     | '/_authenticated/admin/produtos/$id'
+    | '/api/public/cron/expire-orders'
     | '/_authenticated/admin/produtos/'
   fileRoutesById: FileRoutesById
 }
@@ -252,6 +265,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CheckoutRoute: typeof CheckoutRoute
   PIdRoute: typeof PIdRoute
+  ApiPublicCronExpireOrdersRoute: typeof ApiPublicCronExpireOrdersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -375,6 +389,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminProdutosIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/api/public/cron/expire-orders': {
+      id: '/api/public/cron/expire-orders'
+      path: '/api/public/cron/expire-orders'
+      fullPath: '/api/public/cron/expire-orders'
+      preLoaderRoute: typeof ApiPublicCronExpireOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin/produtos/$id': {
       id: '/_authenticated/admin/produtos/$id'
       path: '/produtos/$id'
@@ -435,17 +456,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CheckoutRoute: CheckoutRoute,
   PIdRoute: PIdRoute,
+  ApiPublicCronExpireOrdersRoute: ApiPublicCronExpireOrdersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
