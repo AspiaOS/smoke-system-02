@@ -744,6 +744,38 @@ export type Database = {
           },
         ]
       }
+      public_store_settings: {
+        Row: {
+          banners: Json | null
+          business_hours: string | null
+          store_display_name: string | null
+          store_id: string | null
+          whatsapp_number: string | null
+        }
+        Insert: {
+          banners?: Json | null
+          business_hours?: string | null
+          store_display_name?: string | null
+          store_id?: string | null
+          whatsapp_number?: string | null
+        }
+        Update: {
+          banners?: Json | null
+          business_hours?: string | null
+          store_display_name?: string | null
+          store_id?: string | null
+          whatsapp_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_settings_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: true
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       accept_order: { Args: { p_order_id: string }; Returns: string }
