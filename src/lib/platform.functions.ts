@@ -1,24 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { platformRoleHasCapability, type PlatformCapability, type PlatformRole } from "@/lib/authz/matrix";
-
-async function assertPlatformAdmin(
-  supabase: import("@supabase/supabase-js").SupabaseClient,
-  userId: string,
-  capability: PlatformCapability,
-): Promise<PlatformRole> {
-  const { data, error } = await supabase
-    .from("platform_admins")
-    .select("role, active")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (error || !data || !data.active) throw new Response("Forbidden", { status: 403 });
-  const role = data.role as PlatformRole;
-  if (!platformRoleHasCapability(role, capability)) {
-    throw new Response("Forbidden", { status: 403 });
-  }
-  return role;
-}
 
 async function logPlatform(
   admin: import("@supabase/supabase-js").SupabaseClient,
@@ -43,6 +24,7 @@ export const listPlatformAuditLogs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { limit?: number; action?: string; targetType?: string } | undefined) => d ?? {})
   .handler(async ({ data, context }) => {
+    const { assertPlatformAdmin } = await import("@/lib/authz/platform.server");
     await assertPlatformAdmin(context.supabase, context.userId, "audit.view");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let q = supabaseAdmin
@@ -87,6 +69,7 @@ export const createStore = createServerFn({ method: "POST" })
     }) => d,
   )
   .handler(async ({ data, context }): Promise<{ storeId: string; ownerId: string }> => {
+    const { assertPlatformAdmin } = await import("@/lib/authz/platform.server");
     await assertPlatformAdmin(context.supabase, context.userId, "stores.create");
     const name = data.storeName.trim();
     const email = data.ownerEmail.trim().toLowerCase();
@@ -155,6 +138,7 @@ export const setStoreStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { storeId: string; status: "active" | "suspended"; reason?: string }) => d)
   .handler(async ({ data, context }) => {
+    const { assertPlatformAdmin } = await import("@/lib/authz/platform.server");
     await assertPlatformAdmin(
       context.supabase,
       context.userId,
@@ -179,6 +163,7 @@ export const createAccount = createServerFn({ method: "POST" })
     (d: { email: string; displayName: string; password: string; storeId?: string; role?: string }) => d,
   )
   .handler(async ({ data, context }): Promise<{ userId: string }> => {
+    const { assertPlatformAdmin } = await import("@/lib/authz/platform.server");
     await assertPlatformAdmin(context.supabase, context.userId, "accounts.invite");
     const email = data.email.trim().toLowerCase();
     const displayName = data.displayName.trim();
@@ -224,6 +209,7 @@ export const setAccountStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { userId: string; status: "active" | "suspended" | "archived" }) => d)
   .handler(async ({ data, context }) => {
+    const { assertPlatformAdmin } = await import("@/lib/authz/platform.server");
     await assertPlatformAdmin(
       context.supabase,
       context.userId,
@@ -243,6 +229,7 @@ export const assignMembership = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { userId: string; storeId: string; role: string }) => d)
   .handler(async ({ data, context }) => {
+    const { assertPlatformAdmin } = await import("@/lib/authz/platform.server");
     await assertPlatformAdmin(context.supabase, context.userId, "memberships.change_role");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("store_memberships").upsert(
