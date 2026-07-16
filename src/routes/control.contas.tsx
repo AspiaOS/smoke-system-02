@@ -1,7 +1,9 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ControlShell } from "@/components/control/ControlShell";
 import { getPlatformAdminSelf, listAccounts } from "@/lib/authz.functions";
+import { platformRoleHasCapability } from "@/lib/authz/matrix";
+
 
 export const Route = createFileRoute("/control/contas")({
   ssr: false,
