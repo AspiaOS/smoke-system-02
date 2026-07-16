@@ -7,6 +7,7 @@ const NAV = [
   { to: "/control", label: "Visão geral", icon: LayoutDashboard, exact: true },
   { to: "/control/contas", label: "Contas", icon: Users, exact: false },
   { to: "/control/lojas", label: "Lojas", icon: Store, exact: false },
+  { to: "/control/auditoria", label: "Auditoria", icon: ScrollText, exact: false },
 ] as const;
 
 export function ControlShell({ children, title }: { children: ReactNode; title: string }) {
@@ -48,14 +49,6 @@ export function ControlShell({ children, title }: { children: ReactNode; title: 
                 </Link>
               );
             })}
-            <div className="pt-4 mt-4 border-t border-neutral-800 space-y-1 px-1">
-              <div className="px-2 text-[10px] uppercase tracking-wider text-neutral-600 pb-2">
-                Em breve
-              </div>
-              <div className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-neutral-600 cursor-not-allowed">
-                <ScrollText className="h-4 w-4" /> Auditoria
-              </div>
-            </div>
           </nav>
           <button
             onClick={signOut}

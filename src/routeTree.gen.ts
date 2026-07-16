@@ -19,6 +19,7 @@ import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as ControlLojasRouteImport } from './routes/control.lojas'
 import { Route as ControlLoginRouteImport } from './routes/control.login'
 import { Route as ControlContasRouteImport } from './routes/control.contas'
+import { Route as ControlAuditoriaRouteImport } from './routes/control.auditoria'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as ControlLojasNovaRouteImport } from './routes/control.lojas.nova'
@@ -84,6 +85,11 @@ const ControlLoginRoute = ControlLoginRouteImport.update({
 const ControlContasRoute = ControlContasRouteImport.update({
   id: '/control/contas',
   path: '/control/contas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ControlAuditoriaRoute = ControlAuditoriaRouteImport.update({
+  id: '/control/auditoria',
+  path: '/control/auditoria',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
@@ -189,6 +195,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/checkout': typeof CheckoutRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/control/auditoria': typeof ControlAuditoriaRoute
   '/control/contas': typeof ControlContasRouteWithChildren
   '/control/login': typeof ControlLoginRoute
   '/control/lojas': typeof ControlLojasRouteWithChildren
@@ -216,6 +223,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/checkout': typeof CheckoutRoute
+  '/control/auditoria': typeof ControlAuditoriaRoute
   '/control/contas': typeof ControlContasRouteWithChildren
   '/control/login': typeof ControlLoginRoute
   '/control/lojas': typeof ControlLojasRouteWithChildren
@@ -246,6 +254,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/checkout': typeof CheckoutRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/control/auditoria': typeof ControlAuditoriaRoute
   '/control/contas': typeof ControlContasRouteWithChildren
   '/control/login': typeof ControlLoginRoute
   '/control/lojas': typeof ControlLojasRouteWithChildren
@@ -276,6 +285,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/checkout'
     | '/admin'
+    | '/control/auditoria'
     | '/control/contas'
     | '/control/login'
     | '/control/lojas'
@@ -303,6 +313,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/checkout'
+    | '/control/auditoria'
     | '/control/contas'
     | '/control/login'
     | '/control/lojas'
@@ -332,6 +343,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/checkout'
     | '/_authenticated/admin'
+    | '/control/auditoria'
     | '/control/contas'
     | '/control/login'
     | '/control/lojas'
@@ -361,6 +373,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   CheckoutRoute: typeof CheckoutRoute
+  ControlAuditoriaRoute: typeof ControlAuditoriaRoute
   ControlContasRoute: typeof ControlContasRouteWithChildren
   ControlLoginRoute: typeof ControlLoginRoute
   ControlLojasRoute: typeof ControlLojasRouteWithChildren
@@ -440,6 +453,13 @@ declare module '@tanstack/react-router' {
       path: '/control/contas'
       fullPath: '/control/contas'
       preLoaderRoute: typeof ControlContasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/control/auditoria': {
+      id: '/control/auditoria'
+      path: '/control/auditoria'
+      fullPath: '/control/auditoria'
+      preLoaderRoute: typeof ControlAuditoriaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin': {
@@ -639,6 +659,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   CheckoutRoute: CheckoutRoute,
+  ControlAuditoriaRoute: ControlAuditoriaRoute,
   ControlContasRoute: ControlContasRouteWithChildren,
   ControlLoginRoute: ControlLoginRoute,
   ControlLojasRoute: ControlLojasRouteWithChildren,
