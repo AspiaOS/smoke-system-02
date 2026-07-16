@@ -768,6 +768,7 @@ export type Database = {
           whatsapp_number: string
         }[]
       }
+      current_store_id: { Args: never; Returns: string }
       expire_pending_orders: { Args: { _older_than?: string }; Returns: number }
       has_role: {
         Args: {
