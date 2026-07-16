@@ -113,6 +113,16 @@ function Checkout() {
       </header>
 
       <main className="mx-auto max-w-3xl space-y-8 px-5 pb-32">
+        {/* Honeypot: invisível para humanos, atrai bots */}
+        <input
+          ref={honeypotRef}
+          type="text"
+          name="company_website"
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          className="absolute left-[-9999px] top-[-9999px] h-0 w-0 opacity-0"
+        />
         <section>
           <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
             Seu carrinho
