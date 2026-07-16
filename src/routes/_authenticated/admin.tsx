@@ -1,7 +1,9 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { useCapabilities } from "@/hooks/use-capabilities";
+import type { Capability } from "@/lib/authz/matrix";
 import { cn } from "@/lib/utils";
 import {
   LayoutGrid,
@@ -27,36 +29,28 @@ type NavItem = {
   to: string;
   label: string;
   icon: LucideIcon;
-  enabled: boolean;
+  capability: Capability;
 };
 
 const NAV: readonly NavItem[] = [
-  { to: "/admin", label: "Dashboard", icon: LayoutGrid, enabled: true },
-  { to: "/admin/produtos", label: "Produtos", icon: Package, enabled: true },
-  { to: "/admin/categorias", label: "Categorias", icon: Tag, enabled: true },
-  { to: "/admin/pedidos", label: "Pedidos", icon: ShoppingCart, enabled: true },
-  { to: "/admin/clientes", label: "Clientes", icon: Users, enabled: true },
-  { to: "/admin/vendas", label: "Vendas", icon: DollarSign, enabled: true },
-  { to: "/admin/despesas", label: "Despesas", icon: Receipt, enabled: true },
-  { to: "/admin/estoque", label: "Estoque", icon: Warehouse, enabled: true },
-  { to: "/admin/frete", label: "Frete", icon: Truck, enabled: true },
-  { to: "/admin/configuracoes", label: "Configurações", icon: Settings, enabled: true },
-  { to: "/admin/auditoria", label: "Auditoria", icon: ScrollText, enabled: true },
+  { to: "/admin", label: "Dashboard", icon: LayoutGrid, capability: "dashboard.view" },
+  { to: "/admin/produtos", label: "Produtos", icon: Package, capability: "products.view" },
+  { to: "/admin/categorias", label: "Categorias", icon: Tag, capability: "categories.view" },
+  { to: "/admin/pedidos", label: "Pedidos", icon: ShoppingCart, capability: "orders.view" },
+  { to: "/admin/clientes", label: "Clientes", icon: Users, capability: "customers.view" },
+  { to: "/admin/vendas", label: "Vendas", icon: DollarSign, capability: "sales.view" },
+  { to: "/admin/despesas", label: "Despesas", icon: Receipt, capability: "expenses.view" },
+  { to: "/admin/estoque", label: "Estoque", icon: Warehouse, capability: "stock.view" },
+  { to: "/admin/frete", label: "Frete", icon: Truck, capability: "shipping.view" },
+  { to: "/admin/configuracoes", label: "Configurações", icon: Settings, capability: "settings.view" },
+  { to: "/admin/auditoria", label: "Auditoria", icon: ScrollText, capability: "audit.view" },
 ] as const;
 
 function AdminLayout() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-
-  const { data: isOwner } = useQuery({
-    queryKey: ["is_owner"],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("is_owner");
-      if (error) throw error;
-      return Boolean(data);
-    },
-  });
+  const { loading, role, can } = useCapabilities();
 
   async function signOut() {
     await qc.cancelQueries();
@@ -65,19 +59,21 @@ function AdminLayout() {
     navigate({ to: "/auth", replace: true });
   }
 
-  if (isOwner === false) {
+  if (!loading && !role) {
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
         <div className="max-w-md text-center">
           <h1 className="text-xl font-semibold">Sem acesso</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Sua conta não tem permissão de dono. Peça ao dono para liberar seu acesso.
+            Sua conta não é membro ativo desta loja. Peça ao dono para liberar seu acesso.
           </p>
           <Button className="mt-6" onClick={signOut}>Sair</Button>
         </div>
       </div>
     );
   }
+
+  const visibleNav = NAV.filter((n) => can(n.capability));
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
@@ -87,36 +83,25 @@ function AdminLayout() {
           <Link to="/admin" className="mt-1 block font-display text-3xl font-bold tracking-tight">
             Smoke<span className="text-primary">.</span>
           </Link>
+          {role && (
+            <p className="mt-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+              {role}
+            </p>
+          )}
         </div>
 
         <nav className="flex-1">
           <ul className="space-y-1">
-            {NAV.map((n) => {
+            {visibleNav.map((n) => {
               const active =
-                n.enabled &&
-                (n.to === "/admin" ? pathname === "/admin" : pathname.startsWith(n.to));
+                n.to === "/admin" ? pathname === "/admin" : pathname.startsWith(n.to);
               const Icon = n.icon;
-              const base =
-                "flex items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium transition-colors";
-              if (!n.enabled) {
-                return (
-                  <li key={n.to}>
-                    <span
-                      className={cn(base, "cursor-not-allowed text-muted-foreground/50")}
-                      title="Em breve"
-                    >
-                      <Icon className="h-4 w-4" />
-                      {n.label}
-                    </span>
-                  </li>
-                );
-              }
               return (
                 <li key={n.to}>
                   <Link
                     to={n.to}
                     className={cn(
-                      base,
+                      "flex items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium transition-colors",
                       active
                         ? "bg-primary text-primary-foreground"
                         : "text-muted-foreground hover:bg-surface hover:text-foreground",
@@ -150,7 +135,7 @@ function AdminLayout() {
 
         <nav className="md:hidden overflow-x-auto border-b border-border px-2">
           <ul className="flex gap-1 py-2">
-            {NAV.filter((n) => n.enabled).map((n) => {
+            {visibleNav.map((n) => {
               const active = n.to === "/admin" ? pathname === "/admin" : pathname.startsWith(n.to);
               return (
                 <li key={n.to}>
