@@ -19,7 +19,6 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { StatCard } from "@/components/admin/StatCard";
 import { ConfirmDeleteDialog } from "@/components/admin/ConfirmDeleteDialog";
-import { MagicBento } from "@/components/ui/magic-bento";
 
 export const Route = createFileRoute("/_authenticated/admin/categorias")({
   component: CategoriesPage,
@@ -148,22 +147,11 @@ function CategoriesPage() {
         description="Organize como seus produtos aparecem na loja. Categorias desativadas ficam ocultas da vitrine."
       />
 
-      <MagicBento
-        className="grid gap-3 sm:grid-cols-3"
-        enableStars
-        enableSpotlight
-        enableBorderGlow
-        enableTilt={false}
-        enableMagnetism={false}
-        clickEffect
-        spotlightRadius={400}
-        particleCount={8}
-        glowColor="132, 0, 255"
-      >
+      <div className="grid gap-3 sm:grid-cols-3">
         <StatCard label="Categorias" value={stats.total} />
         <StatCard label="Ativas" value={stats.active} />
         <StatCard label="Produtos" value={stats.products} />
-      </MagicBento>
+      </div>
 
       <Card>
         <CardHeader className="pb-3"><CardTitle className="text-base">Nova categoria</CardTitle></CardHeader>

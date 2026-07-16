@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatBRL, numericToCents } from "@/lib/money";
 import { Badge } from "@/components/ui/badge";
-import { MagicBento } from "@/components/ui/magic-bento";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -205,25 +204,14 @@ function Dashboard() {
       </div>
 
       {/* Metric cards */}
-      <MagicBento
-        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
-        enableStars
-        enableSpotlight
-        enableBorderGlow
-        enableTilt={false}
-        enableMagnetism={false}
-        clickEffect
-        spotlightRadius={400}
-        particleCount={8}
-        glowColor="132, 0, 255"
-      >
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <MetricCard label="Pendentes" value={String(pending.length)} highlight={pending.length > 0} />
         <MetricCard label="Pedidos hoje" value={String(todayOrders)} />
         <MetricCard label="Receita hoje" value={formatBRL(todayRevenue / 100)} delta={revenueDelta} />
         <MetricCard label="Lucro hoje" value={formatBRL(todayProfit / 100)} delta={profitDelta} />
         <MetricCard label="Ticket médio" value={formatBRL(avgTicket / 100)} />
         <MetricCard label="Clientes" value={String(counts?.customers ?? 0)} sub={`${counts?.products ?? 0} produtos`} />
-      </MagicBento>
+      </div>
 
       {/* Quick actions */}
       <Card>

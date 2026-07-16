@@ -16,7 +16,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { MagicBento } from "@/components/ui/magic-bento";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Select,
@@ -326,18 +325,7 @@ function StockPage() {
         </div>
       </div>
 
-      <MagicBento
-        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
-        enableStars
-        enableSpotlight
-        enableBorderGlow
-        enableTilt={false}
-        enableMagnetism={false}
-        clickEffect
-        spotlightRadius={400}
-        particleCount={8}
-        glowColor="132, 0, 255"
-      >
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryCard icon={<Package className="h-4 w-4" />} label="Itens em estoque" value={summary.totalItems.toString()} />
         <SummaryCard icon={<Layers className="h-4 w-4" />} label="Variações ativas" value={summary.activeVars.toString()} />
         <SummaryCard
@@ -347,7 +335,7 @@ function StockPage() {
           highlight={summary.low > 0}
         />
         <SummaryCard icon={<Wallet className="h-4 w-4" />} label="Valor em estoque" value={formatBRL(summary.value)} />
-      </MagicBento>
+      </div>
 
       <Tabs defaultValue="atual">
         <TabsList>

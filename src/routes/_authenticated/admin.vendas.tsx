@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { MagicBento } from "@/components/ui/magic-bento";
 import {
   Select,
   SelectContent,
@@ -190,18 +189,7 @@ function SalesPage() {
         </Select>
       </div>
 
-      <MagicBento
-        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
-        enableStars
-        enableSpotlight
-        enableBorderGlow
-        enableTilt={false}
-        enableMagnetism={false}
-        clickEffect
-        spotlightRadius={400}
-        particleCount={8}
-        glowColor="132, 0, 255"
-      >
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <SummaryCard label="Receita" value={formatBRL(totals.revenue / 100)} />
         <SummaryCard label="Custo" value={formatBRL(totals.cost / 100)} />
         <SummaryCard
@@ -212,7 +200,7 @@ function SalesPage() {
         <SummaryCard label="Vendas" value={String(totals.count)} />
         <SummaryCard label="Ticket médio" value={formatBRL(totals.avg / 100)} />
         <SummaryCard label="Margem média" value={`${totals.margin.toFixed(1)}%`} />
-      </MagicBento>
+      </div>
 
       <Card>
         <CardHeader><CardTitle>Histórico de vendas</CardTitle></CardHeader>

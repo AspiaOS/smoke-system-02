@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MagicBento } from "@/components/ui/magic-bento";
 import {
   Select,
   SelectContent,
@@ -213,22 +212,11 @@ function ShippingPage() {
         Alterações de frete valem apenas para novos pedidos. Pedidos anteriores mantêm o valor original.
       </p>
 
-      <MagicBento
-        className="grid gap-3 sm:grid-cols-3"
-        enableStars
-        enableSpotlight
-        enableBorderGlow
-        enableTilt={false}
-        enableMagnetism={false}
-        clickEffect
-        spotlightRadius={400}
-        particleCount={8}
-        glowColor="132, 0, 255"
-      >
+      <div className="grid gap-3 sm:grid-cols-3">
         <SummaryCard label="Bairros ativos" value={summary.active.toString()} />
         <SummaryCard label="Inativos" value={summary.inactive.toString()} />
         <SummaryCard label="Frete médio" value={formatBRL(summary.avg)} />
-      </MagicBento>
+      </div>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <Input
