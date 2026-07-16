@@ -61,7 +61,10 @@ function AuthPage() {
           }
           return;
         }
-        navigate({ to: "/admin", replace: true });
+        const { data: sess } = await supabase.auth.getSession();
+        if (sess.session) await routeAfterAuth(sess.session.user.id);
+        else navigate({ to: "/admin", replace: true });
+
       } else {
         const { error } = await supabase.auth.signUp({
           email,
