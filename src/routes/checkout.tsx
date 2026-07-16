@@ -77,11 +77,11 @@ function Checkout() {
     },
     onSuccess: (row) => {
       const msg = buildWhatsAppMessage({
-        name,
-        phone,
-        address,
-        neighborhood: neighborhood?.name ?? "",
-        payment,
+        name: row.customer_name,
+        phone: row.customer_phone,
+        address: row.address,
+        neighborhood: row.neighborhood_name,
+        payment: (row.payment_method as PaymentMethod) || payment,
         items,
         subtotal: row.subtotal,
         deliveryFee: row.delivery_fee,
