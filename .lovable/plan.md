@@ -1,72 +1,63 @@
-# Fase 10 — Testes E2E + Rate-limit
+# Fase 11 — Refactor
 
-## Aviso importante (rate-limit)
+Objetivo: reduzir duplicação e tamanho de arquivos sem mudar comportamento. Zero mudança de UI/UX, zero mudança de schema, zero mudança de contrato dos server functions.
 
-O backend **não tem primitiva padrão de rate-limit** (sem Redis, sem KV, sem Upstash). Implementação será **ad-hoc via tabela Postgres** (`rate_limit_hits`), suficiente para bloquear abuso trivial de um endpoint público. Não é production-grade contra ataques distribuídos — para isso seria Cloudflare Turnstile ou WAF, fora do escopo desta fase. Confirmando que você aceita esse tradeoff ao aprovar o plano.
+## Parte A — Server utils compartilhados
 
-## Parte A — Rate-limit no `createPublicOrder`
+Criar `src/lib/server-utils.ts` (helpers server-only, `import { getRequestHeader } from "@tanstack/react-start/server"`):
 
-**Nova tabela `rate_limit_hits`:**
-- `key` (text, PK-parcial): identifica o cliente. Usaremos `ip:<ip>` extraído do header `x-forwarded-for` no server fn.
-- `bucket` (text): nome do endpoint (ex: `create_public_order`).
-- `hit_at` (timestamptz default now())
-- índice em `(key, bucket, hit_at desc)`
+- `getClientIp(): string` — extrai IP de `x-forwarded-for` / `cf-connecting-ip` / `x-real-ip`.
+- `assertSameOrigin(): void` — valida `origin` vs `host`, lança `Response(403)`.
+- `createPublicSupabase()` — cria client publishable com o shim de `apikey` (sem `Authorization: Bearer sb_...`), pronto para uso em server fns públicas.
+- `checkRateLimit({ key, bucket, max, windowSeconds })` — wrapper sobre `rpc('check_rate_limit', ...)`, fail-open.
 
-**Função SQL `check_rate_limit(_key text, _bucket text, _max int, _window_seconds int)`** (SECURITY DEFINER):
-- Conta hits nos últimos `_window_seconds`. Se >= `_max`, retorna `false`. Senão, insere um hit e retorna `true`.
-- GRANT EXECUTE para `anon, authenticated`.
-- Job de limpeza: policy de retenção via `delete from rate_limit_hits where hit_at < now() - interval '1 hour'` no início da própria função (housekeeping barato).
+Refatorar `src/lib/checkout.functions.ts` para consumir esses helpers. Comportamento idêntico.
 
-**RLS na tabela:** enable RLS, sem policies para anon/authenticated (só a função definer escreve/lê). GRANT nada para roles Data API.
+Observação: hoje só `checkout.functions.ts` usa esses helpers, mas centralizá-los prepara o terreno para novos server fns públicos sem duplicar o shim de `sb_` key.
 
-**No `createPublicOrder` (server fn):**
-- Extrair IP do request via `getWebRequest()` header `x-forwarded-for` (primeiro item) ou `cf-connecting-ip`.
-- Chamar `supabaseAdmin.rpc('check_rate_limit', { _key: 'ip:'+ip, _bucket: 'create_public_order', _max: 5, _window_seconds: 60 })`.
-- Se `false`, lançar `Response('Too many requests', { status: 429 })`.
-- Limite: **5 pedidos/minuto por IP**.
+## Parte B — Quebrar `src/routes/checkout.tsx`
 
-## Parte B — Testes E2E com Playwright
+Arquivo atual: 339 linhas. Extrair para `src/components/checkout/`:
 
-Estrutura: pasta `tests/e2e/` com scripts Playwright em Python (usando a infra `/tmp/browser` já disponível no sandbox). **Não** vamos adicionar Playwright como dep npm — os testes rodam via `code--exec` durante desenvolvimento, não no CI ainda.
+- `CartList.tsx` — renderiza itens do carrinho + controles (+/-/remove).
+- `CustomerForm.tsx` — nome, WhatsApp, endereço, bairro (select), pagamento (chips). Props controlam estado, sem lógica de submit.
+- `OrderSummary.tsx` — subtotal, entrega, total.
+- `Field.tsx` e `Row.tsx` — primitivos internos usados pelo form/summary.
+- `build-whatsapp-message.ts` — `buildWhatsAppMessage()` puro, testável.
 
-Alternativa: usar `@playwright/test` como devDep para rodar via `bunx playwright test`. **Escolho a segunda** (mais reutilizável e permite `expect` estruturado).
+`checkout.tsx` fica só com: estado, `useMutation`, honeypot, layout e composição dos componentes. Alvo: ~130 linhas.
 
-**Instalação:** `bun add -d @playwright/test` + `playwright.config.ts` mínimo apontando para `http://localhost:8080`.
+## Parte C — Componentes admin compartilhados
 
-**Arquivos:**
+Padrões repetidos nas páginas `_authenticated/admin.*`:
 
-1. `tests/e2e/checkout.spec.ts` — Checkout público completo
-   - Visita `/`, adiciona 1º produto ao carrinho, abre `/checkout`, preenche nome/telefone/endereço, seleciona bairro, submete.
-   - Verifica que URL do WhatsApp é gerada (mock: intercepta `window.open` e captura URL).
-   - Assert que a URL contém nome do cliente e nome do produto.
+- Cabeçalho de página (título + botão de ação primário).
+- Tabelas simples de listagem (cabeçalho, linhas, empty state, loading).
+- Botões destrutivos com confirmação (usados em vendas, despesas, produtos, categorias, clientes).
+- Campos de formulário rotulados (label maiúsculo + input rounded, hoje duplicado em cada página).
 
-2. `tests/e2e/admin-auth.spec.ts` — Login/logout admin
-   - Cria usuário admin via seed (ou usa `LOVABLE_BROWSER_SUPABASE_*` se disponível).
-   - Login → navega para `/admin/produtos` → logout → verifica redirect para `/auth` → login com outra conta → verifica que dashboard mostra dados da conta 2, não da 1.
+Criar `src/components/admin/`:
 
-3. `tests/e2e/admin-produtos.spec.ts` — CRUD produto
-   - Login admin → cria produto (nome, preço, categoria) → verifica na lista → edita preço → deleta → verifica remoção.
-   - Skip upload de mídia (Playwright + storage é ruído; cobre em teste manual).
+- `PageHeader.tsx` — `{ title, action? }`.
+- `DataTable.tsx` — `{ columns, rows, empty, loading }` genérico simples (não substitui tabelas com features complexas como estoque/pedidos; usado por categorias, despesas, clientes, frete, auditoria).
+- `ConfirmButton.tsx` — botão + `AlertDialog` de confirmação para deletar.
+- `FormField.tsx` — label + input padronizados, usados em configurações, categorias, frete.
 
-4. `tests/e2e/admin-config.spec.ts` — Configurações
-   - Login admin → `/admin/configuracoes` → edita número WhatsApp → salva → reload → verifica persistência.
-   - Adiciona bairro → verifica na lista → deleta.
+Aplicar em, no mínimo: `admin.categorias.tsx`, `admin.frete.tsx`, `admin.despesas.tsx`, `admin.auditoria.tsx`, `admin.configuracoes.tsx`.
 
-**Setup compartilhado:** `tests/e2e/helpers.ts` com `loginAsAdmin(page, email, password)` e `seedTestData()` (chama server fns).
+**Fora do escopo desta fase:** páginas com tabelas grandes e específicas (`admin.estoque.tsx`, `admin.pedidos.tsx`, `admin.produtos.index.tsx`) — refatorar essas exigiria mudanças maiores; deixar para uma Fase 11.1 se você quiser depois.
 
-**Credenciais de teste:** ler `TEST_ADMIN_EMAIL` / `TEST_ADMIN_PASSWORD` do env; se ausentes, `test.skip()`. Documentar no README dos testes.
+## Validação
 
-## Ordem de execução
+- `tsgo` typecheck limpo.
+- Rodar `bunx playwright test tests/e2e/checkout.spec.ts` e `admin-config.spec.ts` para garantir que UI e fluxo continuam idênticos.
+- Diff visual: sem mudanças (só reorganização).
 
-1. Migration: tabela `rate_limit_hits` + função `check_rate_limit`.
-2. Editar `src/lib/checkout.functions.ts`: adicionar rate-limit check no início do handler.
-3. `bun add -d @playwright/test` + `playwright.config.ts`.
-4. Criar 4 specs + helpers.
-5. Rodar `bunx playwright test` e iterar até verde.
+## Ordem
 
-## Fora de escopo
+1. Parte A (server-utils + refactor checkout.functions.ts).
+2. Parte B (componentes de checkout).
+3. Parte C (componentes admin + aplicar em 5 páginas).
+4. Typecheck + testes.
 
-- Testes de upload de mídia (Storage).
-- Testes de responsividade mobile.
-- CI (GitHub Actions) — apenas execução local por enquanto.
-- Rate-limit por usuário autenticado (só IP para o endpoint público).
+Aprovar para eu executar.
