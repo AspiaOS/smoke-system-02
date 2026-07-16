@@ -27,7 +27,7 @@ export const Route = createFileRoute("/control")({
     // 2) Com sessão: chama a server fn. Se o token estiver inválido/expirado,
     //    trata como sessão perdida e redireciona. Se retornar null, é
     //    autenticado-mas-não-admin → errorComponent explícito.
-    let admin: Awaited<ReturnType<typeof getPlatformAdminSelf>> | "INVALID_SESSION";
+    let admin: Awaited<ReturnType<typeof getPlatformAdminSelf>>;
     try {
       admin = await getPlatformAdminSelf();
     } catch {
