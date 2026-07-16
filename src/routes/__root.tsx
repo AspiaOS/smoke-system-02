@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -129,12 +129,32 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  const lastUserIdRef = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+    // Inicializa com a sessão atual para evitar tratar o INITIAL_SESSION como troca.
+    supabase.auth.getUser().then(({ data }) => {
+      if (lastUserIdRef.current === undefined) lastUserIdRef.current = data.user?.id ?? null;
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+      const nextId = session?.user?.id ?? null;
+      const prevId = lastUserIdRef.current;
+      const identityChanged = prevId !== undefined && prevId !== nextId;
+      lastUserIdRef.current = nextId;
+
+      // Sempre invalida o router para reavaliar rotas gated.
       router.invalidate();
-      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+
+      if (event === "SIGNED_OUT" || identityChanged) {
+        // Descarta o cache do usuário anterior antes de qualquer refetch.
+        queryClient.cancelQueries();
+        queryClient.clear();
+        return;
+      }
+      // Mesmo usuário: apenas invalida para revalidar dados frescos.
+      queryClient.invalidateQueries();
     });
     return () => sub.subscription.unsubscribe();
   }, [queryClient, router]);
