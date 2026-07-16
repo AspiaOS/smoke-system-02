@@ -457,6 +457,27 @@ export type Database = {
           },
         ]
       }
+      rate_limit_hits: {
+        Row: {
+          bucket: string
+          hit_at: string
+          id: number
+          key: string
+        }
+        Insert: {
+          bucket: string
+          hit_at?: string
+          id?: number
+          key: string
+        }
+        Update: {
+          bucket?: string
+          hit_at?: string
+          id?: number
+          key?: string
+        }
+        Relationships: []
+      }
       sales: {
         Row: {
           created_at: string
@@ -782,6 +803,15 @@ export type Database = {
       cancel_order: {
         Args: { p_order_id: string; p_reason: string }
         Returns: undefined
+      }
+      check_rate_limit: {
+        Args: {
+          _bucket: string
+          _key: string
+          _max: number
+          _window_seconds: number
+        }
+        Returns: boolean
       }
       create_public_order: {
         Args: {
