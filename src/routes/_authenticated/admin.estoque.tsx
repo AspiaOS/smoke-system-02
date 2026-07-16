@@ -35,6 +35,7 @@ import {
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/money";
 import { AlertTriangle, Package, Layers, Wallet, PackagePlus, SlidersHorizontal } from "lucide-react";
+import { useCapabilities } from "@/hooks/use-capabilities";
 
 export const Route = createFileRoute("/_authenticated/admin/estoque")({
   component: StockPage,
@@ -82,6 +83,9 @@ const TYPE_LABEL: Record<Movement["type"], string> = {
 
 function StockPage() {
   const qc = useQueryClient();
+  const { can } = useCapabilities();
+  const canEntry = can("stock.entry");
+  const canAdjust = can("stock.adjust");
   const [modal, setModal] = useState<
     | { kind: "entry" | "adjust"; variation: VariationWithProduct | null }
     | null
@@ -315,14 +319,20 @@ function StockPage() {
             Ajuste exige motivo. Toda movimentação vira registro auditável.
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={() => openTop("entry")}>
-            <PackagePlus className="mr-2 h-4 w-4" /> Entrada
-          </Button>
-          <Button variant="outline" onClick={() => openTop("adjust")}>
-            <SlidersHorizontal className="mr-2 h-4 w-4" /> Ajuste
-          </Button>
-        </div>
+        {(canEntry || canAdjust) && (
+          <div className="flex gap-2">
+            {canEntry && (
+              <Button onClick={() => openTop("entry")}>
+                <PackagePlus className="mr-2 h-4 w-4" /> Entrada
+              </Button>
+            )}
+            {canAdjust && (
+              <Button variant="outline" onClick={() => openTop("adjust")}>
+                <SlidersHorizontal className="mr-2 h-4 w-4" /> Ajuste
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -415,7 +425,7 @@ function StockPage() {
                       <TableHead className="text-right">Mínimo</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Última mov.</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
+                      {(canEntry || canAdjust) && <TableHead className="text-right">Ações</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -439,16 +449,22 @@ function StockPage() {
                           <TableCell className="text-xs text-muted-foreground">
                             {last ? new Date(last.created_at).toLocaleString("pt-BR") : "—"}
                           </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-1">
-                              <Button size="sm" variant="outline" onClick={() => openRow(v, "entry")}>
-                                Entrada
-                              </Button>
-                              <Button size="sm" variant="ghost" onClick={() => openRow(v, "adjust")}>
-                                Ajuste
-                              </Button>
-                            </div>
-                          </TableCell>
+                          {(canEntry || canAdjust) && (
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-1">
+                                {canEntry && (
+                                  <Button size="sm" variant="outline" onClick={() => openRow(v, "entry")}>
+                                    Entrada
+                                  </Button>
+                                )}
+                                {canAdjust && (
+                                  <Button size="sm" variant="ghost" onClick={() => openRow(v, "adjust")}>
+                                    Ajuste
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          )}
                         </TableRow>
                       );
                     })}
