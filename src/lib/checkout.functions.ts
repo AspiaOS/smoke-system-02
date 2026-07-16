@@ -1,8 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequestHeader } from "@tanstack/react-start/server";
-import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import type { Database } from "@/integrations/supabase/types";
+import {
+  assertSameOrigin,
+  checkRateLimit,
+  createPublicSupabase,
+  getClientIp,
+} from "./server-utils.server";
 
 const ItemSchema = z.object({
   variation_id: z.string().uuid(),
@@ -27,33 +30,6 @@ const PayloadSchema = z.object({
 
 export type CreatePublicOrderInput = z.input<typeof PayloadSchema>;
 
-function assertSameOrigin(): void {
-  const origin = getRequestHeader("origin") ?? "";
-  const host = getRequestHeader("host") ?? "";
-  if (!origin) return; // same-origin browser POSTs frequentemente omitem origin
-  try {
-    const originHost = new URL(origin).host;
-    if (originHost !== host) {
-      throw new Response("forbidden_origin", { status: 403 });
-    }
-  } catch {
-    throw new Response("forbidden_origin", { status: 403 });
-  }
-}
-
-function getClientIp(): string {
-  const xff = getRequestHeader("x-forwarded-for") ?? "";
-  if (xff) {
-    const first = xff.split(",")[0]?.trim();
-    if (first) return first;
-  }
-  const cf = getRequestHeader("cf-connecting-ip") ?? "";
-  if (cf) return cf.trim();
-  const real = getRequestHeader("x-real-ip") ?? "";
-  if (real) return real.trim();
-  return "unknown";
-}
-
 export const createPublicOrder = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => PayloadSchema.parse(input))
   .handler(async ({ data }) => {
@@ -64,31 +40,16 @@ export const createPublicOrder = createServerFn({ method: "POST" })
       throw new Response("invalid_payload", { status: 400 });
     }
 
-    const url = process.env.SUPABASE_URL!;
-    const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
-    const supabase = createClient<Database>(url, key, {
-      auth: { persistSession: false, autoRefreshToken: false },
-      global: {
-        fetch: (input, init) => {
-          const h = new Headers(init?.headers);
-          if (key.startsWith("sb_") && h.get("Authorization") === `Bearer ${key}`) {
-            h.delete("Authorization");
-          }
-          h.set("apikey", key);
-          return fetch(input, { ...init, headers: h });
-        },
-      },
-    });
+    const supabase = createPublicSupabase();
 
     // Rate-limit: 5 pedidos/minuto por IP. Fail-open se a checagem falhar.
-    const ip = getClientIp();
-    const { data: allowed, error: rlError } = await supabase.rpc("check_rate_limit", {
-      _key: `ip:${ip}`,
-      _bucket: "create_public_order",
-      _max: 5,
-      _window_seconds: 60,
+    const allowed = await checkRateLimit(supabase, {
+      key: `ip:${getClientIp()}`,
+      bucket: "create_public_order",
+      max: 5,
+      windowSeconds: 60,
     });
-    if (!rlError && allowed === false) {
+    if (!allowed) {
       throw new Response("rate_limited", { status: 429 });
     }
 
