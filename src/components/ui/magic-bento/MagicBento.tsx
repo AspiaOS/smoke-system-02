@@ -308,8 +308,7 @@ export function MagicBento({
 
   return (
     <BentoContext.Provider value={ctxValue}>
-      <As
-        // @ts-expect-error dynamic element ref
+      <div
         ref={rootRef}
         className={`magic-bento-root ${className ?? ""}`}
         style={{
@@ -321,7 +320,7 @@ export function MagicBento({
           <div ref={spotlightRef} className="magic-bento-spotlight" aria-hidden="true" />
         )}
         {wrapped}
-      </As>
+      </div>
     </BentoContext.Provider>
   );
 }
