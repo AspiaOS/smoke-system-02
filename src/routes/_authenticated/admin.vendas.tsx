@@ -190,7 +190,18 @@ function SalesPage() {
         </Select>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <MagicBento
+        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+        enableStars
+        enableSpotlight
+        enableBorderGlow
+        enableTilt={false}
+        enableMagnetism={false}
+        clickEffect
+        spotlightRadius={400}
+        particleCount={8}
+        glowColor="132, 0, 255"
+      >
         <SummaryCard label="Receita" value={formatBRL(totals.revenue / 100)} />
         <SummaryCard label="Custo" value={formatBRL(totals.cost / 100)} />
         <SummaryCard
@@ -201,7 +212,7 @@ function SalesPage() {
         <SummaryCard label="Vendas" value={String(totals.count)} />
         <SummaryCard label="Ticket médio" value={formatBRL(totals.avg / 100)} />
         <SummaryCard label="Margem média" value={`${totals.margin.toFixed(1)}%`} />
-      </div>
+      </MagicBento>
 
       <Card>
         <CardHeader><CardTitle>Histórico de vendas</CardTitle></CardHeader>
