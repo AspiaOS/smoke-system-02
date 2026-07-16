@@ -1152,6 +1152,10 @@ export type Database = {
         }
       }
       suspend_member: { Args: { _membership_id: string }; Returns: undefined }
+      transfer_store_ownership: {
+        Args: { _new_owner_user_id: string; _store_id: string }
+        Returns: undefined
+      }
       variation_store_id: { Args: { _variation_id: string }; Returns: string }
     }
     Enums: {

@@ -68,7 +68,11 @@ function LojasPage() {
               <tbody>
                 {data.map((s) => (
                   <tr key={s.id} className="border-t border-neutral-800">
-                    <td className="px-4 py-3 font-medium">{s.name}</td>
+                    <td className="px-4 py-3 font-medium">
+                      <Link to="/control/lojas/$id" params={{ id: s.id }} className="text-violet-300 hover:underline">
+                        {s.name}
+                      </Link>
+                    </td>
                     <td className="px-4 py-3">
                       <span
                         className={`inline-block text-xs px-2 py-0.5 rounded border ${

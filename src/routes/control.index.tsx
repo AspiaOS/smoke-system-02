@@ -53,9 +53,6 @@ function ControlDashboardPage() {
           </div>
         ))}
       </div>
-      <p className="text-xs text-neutral-600 mt-8">
-        Ações administrativas (convidar, suspender, transferir loja) chegam na próxima fase.
-      </p>
     </ControlShell>
   );
 }
