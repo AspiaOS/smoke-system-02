@@ -1,0 +1,161 @@
+.magic-bento-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: inherit;
+  --glow-x: 50%;
+  --glow-y: 50%;
+  --glow-intensity: 0;
+  --glow-radius: 200px;
+  --magic-glow-color: 132, 0, 255;
+  transition: transform 220ms ease, box-shadow 220ms ease;
+}
+
+.magic-bento-card > * {
+  border-radius: inherit;
+}
+
+.magic-bento-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    var(--glow-radius) circle at var(--glow-x) var(--glow-y),
+    rgba(var(--magic-glow-color), 0.14),
+    transparent 55%
+  );
+  opacity: var(--glow-intensity);
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 200ms ease;
+}
+
+.magic-bento-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: radial-gradient(
+    var(--glow-radius) circle at var(--glow-x) var(--glow-y),
+    rgba(var(--magic-glow-color), calc(var(--glow-intensity) * 0.9)) 0%,
+    rgba(var(--magic-glow-color), calc(var(--glow-intensity) * 0.35)) 35%,
+    transparent 68%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+  z-index: 3;
+  transition: opacity 200ms ease;
+}
+
+.magic-bento-card > .magic-bento-content,
+.magic-bento-card > :not(.magic-bento-particles):not(.magic-bento-ripple) {
+  position: relative;
+  z-index: 2;
+}
+
+.magic-bento-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.magic-bento-particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(var(--magic-glow-color), 1);
+  box-shadow: 0 0 6px rgba(var(--magic-glow-color), 0.9);
+  opacity: 0;
+  animation: magic-bento-particle 1400ms ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes magic-bento-particle {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.6); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1); }
+}
+
+.magic-bento-ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(var(--magic-glow-color), 0.4), transparent 70%);
+  transform: translate(-50%, -50%) scale(0);
+  animation: magic-bento-ripple 600ms ease-out forwards;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes magic-bento-ripple {
+  to { transform: translate(-50%, -50%) scale(3); opacity: 0; }
+}
+
+.magic-bento-card[data-hovering="true"] {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22), 0 0 28px rgba(var(--magic-glow-color), 0.12);
+}
+
+.magic-bento-spotlight {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 250ms ease;
+  border-radius: inherit;
+  background: radial-gradient(
+    var(--spotlight-radius, 400px) circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%),
+    rgba(var(--magic-glow-color), 0.08),
+    transparent 60%
+  );
+}
+
+.magic-bento-root {
+  position: relative;
+}
+
+.magic-bento-root[data-spotlight="true"] .magic-bento-spotlight {
+  opacity: 1;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .magic-bento-card::before,
+  .magic-bento-card::after,
+  .magic-bento-particles,
+  .magic-bento-spotlight {
+    display: none;
+  }
+  .magic-bento-card[data-hovering="true"] {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .magic-bento-card,
+  .magic-bento-card[data-hovering="true"] {
+    transition: none;
+    transform: none;
+    box-shadow: none;
+  }
+  .magic-bento-particle,
+  .magic-bento-ripple {
+    display: none;
+  }
+}
+
+.magic-bento-card[data-disabled="true"]::before,
+.magic-bento-card[data-disabled="true"]::after,
+.magic-bento-card[data-disabled="true"] .magic-bento-particles {
+  display: none;
+}
