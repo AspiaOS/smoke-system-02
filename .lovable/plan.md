@@ -1,98 +1,72 @@
+# Fase 10 — Testes E2E + Rate-limit
 
-## Contexto e restrições reais do projeto
+## Aviso importante (rate-limit)
 
-Antes do plano, três pontos importantes descobertos ao inspecionar o projeto que **mudam o formato pedido no prompt** (e que precisam da sua confirmação antes de eu implementar):
+O backend **não tem primitiva padrão de rate-limit** (sem Redis, sem KV, sem Upstash). Implementação será **ad-hoc via tabela Postgres** (`rate_limit_hits`), suficiente para bloquear abuso trivial de um endpoint público. Não é production-grade contra ataques distribuídos — para isso seria Cloudflare Turnstile ou WAF, fora do escopo desta fase. Confirmando que você aceita esse tradeoff ao aprovar o plano.
 
-1. **`npm run seed:demo` local não é viável neste projeto.** Ele roda em Lovable Cloud, o `SUPABASE_SERVICE_ROLE_KEY` e o `SUPABASE_DB_URL` **não são acessíveis fora do runtime** (não existem no seu `.env` local nem podem ser expostos). Um script Node local não teria como autenticar contra o banco.
-   - **Proposta:** trocar `npm run seed:*` por **server functions protegidas** (`createServerFn` com `requireSupabaseAuth` + verificação de role `owner`), disparadas a partir de uma tela interna oculta em `/admin/demo` visível só em ambiente não-produção.
-   - Comandos equivalentes: botões **"Semear (small)"**, **"Semear (full)"**, **"Validar"**, **"Resetar lote demo"**.
+## Parte A — Rate-limit no `createPublicOrder`
 
-2. **Datas históricas de 120 dias esbarram nas RPCs oficiais** (`accept_order`, `stock_entry`, `stock_adjust`, `create_public_order`) — todas usam `now()` e não aceitam timestamp. As opções são:
-   - (a) **Backfill de timestamps via SQL** após criar tudo pelo fluxo oficial. Mantém `stock`/relacionamentos corretos; só reescreve `created_at`/`accepted_at`/`cancelled_at` mantendo a ordem `pedido ≤ aceite ≤ venda ≤ movimentação ≤ log`. **Recomendado.**
-   - (b) Criar RPCs `SECURITY DEFINER` novas, exclusivas de seed, que aceitam `_at TIMESTAMP`. Mais invasivo, adiciona superfície permanente ao schema.
-   - **Proposta: (a).** O backfill é feito só nas linhas do manifest, jamais em dados reais.
+**Nova tabela `rate_limit_hits`:**
+- `key` (text, PK-parcial): identifica o cliente. Usaremos `ip:<ip>` extraído do header `x-forwarded-for` no server fn.
+- `bucket` (text): nome do endpoint (ex: `create_public_order`).
+- `hit_at` (timestamptz default now())
+- índice em `(key, bucket, hit_at desc)`
 
-3. **O gate `ALLOW_DEMO_SEED=true`** vira uma checagem no handler da server function contra `process.env.ALLOW_DEMO_SEED === "true"` (secret runtime). Sem esse secret configurado, toda tentativa falha com `403`.
+**Função SQL `check_rate_limit(_key text, _bucket text, _max int, _window_seconds int)`** (SECURITY DEFINER):
+- Conta hits nos últimos `_window_seconds`. Se >= `_max`, retorna `false`. Senão, insere um hit e retorna `true`.
+- GRANT EXECUTE para `anon, authenticated`.
+- Job de limpeza: policy de retenção via `delete from rate_limit_hits where hit_at < now() - interval '1 hour'` no início da própria função (housekeeping barato).
 
-## Arquivos a criar / alterar
+**RLS na tabela:** enable RLS, sem policies para anon/authenticated (só a função definer escreve/lê). GRANT nada para roles Data API.
 
-```
-src/lib/demo/
-  demo-data.ts              # catálogos determinísticos (nomes, marcas, bairros, motivos, PRNG mulberry32)
-  demo-seed.functions.ts    # createServerFn: seedDemo({ profile: 'small'|'full' })
-  demo-reset.functions.ts   # createServerFn: resetDemo() — lê manifest da tabela e apaga só os IDs listados
-  demo-validate.functions.ts# createServerFn: validateDemo() — 17 checagens do prompt
-  demo-manifest.server.ts   # helpers de leitura/gravação do manifest (server-only)
-  demo-guard.server.ts      # checa ALLOW_DEMO_SEED + role owner + env não-produção
-src/routes/_authenticated/admin.demo.tsx   # tela interna com 4 botões e log de execução
-supabase/migrations/<ts>_demo_manifest.sql
-  # cria public.demo_manifest (id, run_id, profile, seed, created_at, entries jsonb, summary jsonb)
-  # RLS + GRANT para owner apenas
-public/demo/                # 3 banners SVG + ~10 product-*.svg (assets locais, arte simples)
-```
+**No `createPublicOrder` (server fn):**
+- Extrair IP do request via `getWebRequest()` header `x-forwarded-for` (primeiro item) ou `cf-connecting-ip`.
+- Chamar `supabaseAdmin.rpc('check_rate_limit', { _key: 'ip:'+ip, _bucket: 'create_public_order', _max: 5, _window_seconds: 60 })`.
+- Se `false`, lançar `Response('Too many requests', { status: 429 })`.
+- Limite: **5 pedidos/minuto por IP**.
 
-Nada em `scripts/` porque não há canal para rodá-los. Nada de `.seed/demo-manifest.json` — o manifest vive na tabela `demo_manifest` (persistente, auditável, acessível ao reset).
+## Parte B — Testes E2E com Playwright
 
-## Fluxo do `seedDemo`
+Estrutura: pasta `tests/e2e/` com scripts Playwright em Python (usando a infra `/tmp/browser` já disponível no sandbox). **Não** vamos adicionar Playwright como dep npm — os testes rodam via `code--exec` durante desenvolvimento, não no CI ainda.
 
-```
-0. Guard: env != produção, role=owner, ALLOW_DEMO_SEED=true, sem lote demo ativo (idempotência)
-1. Ler store_id e owner user_id
-2. Registrar linha em demo_manifest (status='running', run_id, seed=20260715)
-3. Categorias (8) — INSERT direto
-4. Produtos (~40) — INSERT direto, com images apontando p/ /demo/product-*.svg
-5. Variações (~120) com stock=0 — INSERT direto
-6. Bairros (~12) — INSERT direto
-7. Estoque inicial: stock_entry() por variação (respeita RPC oficial)
-8. Ajustes ocasionais: stock_adjust() para gerar histórico + audit
-9. Pedidos (~120): create_public_order() por pedido → todos nascem 'pending'
-10. Cancelar ~15% via cancel_order()
-11. Aceitar ~70% via accept_order() — baixa estoque, cria sale + movimentação + log
-12. Despesas (40–70) — INSERT direto
-13. Ajustes de preço em ~15 variações → audit_logs 'price.update' (before/after)
-14. settings.update: nome/whatsapp/banners/destaques + audit_logs
-15. Backfill de datas históricas (SQL restrito aos IDs do manifest, mantendo ordem causal)
-16. Atualizar demo_manifest.entries e .summary; status='complete'
-17. Rodar validateDemo() automaticamente e anexar resultado ao manifest
-```
+Alternativa: usar `@playwright/test` como devDep para rodar via `bunx playwright test`. **Escolho a segunda** (mais reutilizável e permite `expect` estruturado).
 
-Todo INSERT captura o `id` retornado no array `entries[tabela]` do manifest para o reset.
+**Instalação:** `bun add -d @playwright/test` + `playwright.config.ts` mínimo apontando para `http://localhost:8080`.
 
-## Fluxo do `resetDemo`
+**Arquivos:**
 
-Lê `demo_manifest.entries`; apaga na ordem FK-safe:
+1. `tests/e2e/checkout.spec.ts` — Checkout público completo
+   - Visita `/`, adiciona 1º produto ao carrinho, abre `/checkout`, preenche nome/telefone/endereço, seleciona bairro, submete.
+   - Verifica que URL do WhatsApp é gerada (mock: intercepta `window.open` e captura URL).
+   - Assert que a URL contém nome do cliente e nome do produto.
 
-```
-audit_logs → stock_movements → sales → order_items → orders →
-expenses → variations → products → categories → neighborhoods →
-demo_manifest (a própria linha)
-```
+2. `tests/e2e/admin-auth.spec.ts` — Login/logout admin
+   - Cria usuário admin via seed (ou usa `LOVABLE_BROWSER_SUPABASE_*` se disponível).
+   - Login → navega para `/admin/produtos` → logout → verifica redirect para `/auth` → login com outra conta → verifica que dashboard mostra dados da conta 2, não da 1.
 
-Configurações da loja são **revertidas** para snapshot pré-seed guardado em `demo_manifest.pre_snapshot`. Se o manifest não existir, o reset **falha** com `no_manifest_found` — jamais tenta apagar "por padrão".
+3. `tests/e2e/admin-produtos.spec.ts` — CRUD produto
+   - Login admin → cria produto (nome, preço, categoria) → verifica na lista → edita preço → deleta → verifica remoção.
+   - Skip upload de mídia (Playwright + storage é ruído; cobre em teste manual).
 
-## Fluxo do `validateDemo`
+4. `tests/e2e/admin-config.spec.ts` — Configurações
+   - Login admin → `/admin/configuracoes` → edita número WhatsApp → salva → reload → verifica persistência.
+   - Adiciona bairro → verifica na lista → deleta.
 
-Executa as 17 verificações do prompt como SQL/queries determinísticas contra IDs do manifest. Retorna `{ ok: boolean, checks: Array<{ name, passed, detail }>, scenarios: 25/25 }`.
+**Setup compartilhado:** `tests/e2e/helpers.ts` com `loginAsAdmin(page, email, password)` e `seedTestData()` (chama server fns).
 
-## Determinismo
+**Credenciais de teste:** ler `TEST_ADMIN_EMAIL` / `TEST_ADMIN_PASSWORD` do env; se ausentes, `test.skip()`. Documentar no README dos testes.
 
-PRNG mulberry32 semeado com `DEMO_RANDOM_SEED=20260715`. Todos os arrays são embaralhados/escolhidos a partir dele. Uma segunda execução com o mesmo seed produz os mesmos números, nomes e distribuições — mas o guard de idempotência (passo 0) impede rodar duas vezes sem `resetDemo` antes.
+## Ordem de execução
 
-## Tratamento de erros
+1. Migration: tabela `rate_limit_hits` + função `check_rate_limit`.
+2. Editar `src/lib/checkout.functions.ts`: adicionar rate-limit check no início do handler.
+3. `bun add -d @playwright/test` + `playwright.config.ts`.
+4. Criar 4 specs + helpers.
+5. Rodar `bunx playwright test` e iterar até verde.
 
-- Cada passo em try/catch. Em falha: `demo_manifest.status='failed'`, guarda `entries` já criadas, propaga erro. `resetDemo` funciona sobre manifest parcial.
-- Sem try/catch vazios. Sem rollback destrutivo automático — usuário decide entre reset ou investigar.
+## Fora de escopo
 
-## Fora do escopo desta task
-
-- `npm test` e `npm run build`: rodam via harness após implementação; não invento novos testes se o repo hoje não tem framework de testes configurado.
-- Criação de usuários fictícios em `auth.users` — proibido pelo prompt, cumprido.
-- Fotos de produtos reais — usaremos SVGs simples gerados como texto (sem gerar 40 imagens PNG).
-
-## O que preciso de você antes de codar
-
-1. **Confirma trocar `npm run seed:*` por server functions + tela `/admin/demo`?** (não há como rodar Node local com service role no Lovable Cloud)
-2. **Confirma opção (a) para as datas** (backfill SQL restrito ao lote) em vez de criar novas RPCs `SECURITY DEFINER`?
-3. **Configuro o secret runtime `ALLOW_DEMO_SEED=true`** agora (com `set_secret`) para o ambiente de preview? Em produção fica ausente.
-
-Assim que você confirmar, entrego tudo em uma passada: migration do `demo_manifest`, os 5 arquivos em `src/lib/demo/`, a tela `/admin/demo`, os SVGs em `public/demo/`, e o README com instruções.
+- Testes de upload de mídia (Storage).
+- Testes de responsividade mobile.
+- CI (GitHub Actions) — apenas execução local por enquanto.
+- Rate-limit por usuário autenticado (só IP para o endpoint público).

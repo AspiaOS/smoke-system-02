@@ -41,6 +41,19 @@ function assertSameOrigin(): void {
   }
 }
 
+function getClientIp(): string {
+  const xff = getRequestHeader("x-forwarded-for") ?? "";
+  if (xff) {
+    const first = xff.split(",")[0]?.trim();
+    if (first) return first;
+  }
+  const cf = getRequestHeader("cf-connecting-ip") ?? "";
+  if (cf) return cf.trim();
+  const real = getRequestHeader("x-real-ip") ?? "";
+  if (real) return real.trim();
+  return "unknown";
+}
+
 export const createPublicOrder = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => PayloadSchema.parse(input))
   .handler(async ({ data }) => {
@@ -66,6 +79,18 @@ export const createPublicOrder = createServerFn({ method: "POST" })
         },
       },
     });
+
+    // Rate-limit: 5 pedidos/minuto por IP. Fail-open se a checagem falhar.
+    const ip = getClientIp();
+    const { data: allowed, error: rlError } = await supabase.rpc("check_rate_limit", {
+      _key: `ip:${ip}`,
+      _bucket: "create_public_order",
+      _max: 5,
+      _window_seconds: 60,
+    });
+    if (!rlError && allowed === false) {
+      throw new Response("rate_limited", { status: 429 });
+    }
 
     const { data: rows, error } = await supabase.rpc("create_public_order", {
       p_customer_name: data.customer_name,
