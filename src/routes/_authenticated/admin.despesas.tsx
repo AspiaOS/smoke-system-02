@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { MagicBento } from "@/components/ui/magic-bento";
 import {
   Select,
   SelectContent,
@@ -220,7 +221,18 @@ function ExpensesPage() {
         </Select>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <MagicBento
+        className="grid gap-3 sm:grid-cols-3"
+        enableStars
+        enableSpotlight
+        enableBorderGlow
+        enableTilt={false}
+        enableMagnetism={false}
+        clickEffect
+        spotlightRadius={400}
+        particleCount={8}
+        glowColor="132, 0, 255"
+      >
         <Summary label="Lucro bruto" value={formatBRL(grossProfitCents / 100)} />
         <Summary label="Despesas" value={`- ${formatBRL(totalExpensesCents / 100)}`} />
         <Summary
@@ -228,7 +240,7 @@ function ExpensesPage() {
           value={formatBRL(netCents / 100)}
           highlight={netCents >= 0 ? "primary" : "destructive"}
         />
-      </div>
+      </MagicBento>
 
       <Card>
         <CardHeader className="flex-row items-center justify-between">
