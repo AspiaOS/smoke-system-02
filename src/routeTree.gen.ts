@@ -35,7 +35,7 @@ import { Route as AuthenticatedAdminClientesRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminCategoriasRouteImport } from './routes/_authenticated/admin.categorias'
 import { Route as AuthenticatedAdminAuditoriaRouteImport } from './routes/_authenticated/admin.auditoria'
 import { Route as AuthenticatedAdminProdutosIndexRouteImport } from './routes/_authenticated/admin.produtos.index'
-import { Route as ApiPublicCronExpireOrdersRouteImport } from './routes/api/public/cron/expire-orders'
+import { Route as ApiPublicCronExpireOrdersRouteImport } from './routes/api/public/cron.expire-orders'
 import { Route as AuthenticatedAdminProdutosIdRouteImport } from './routes/_authenticated/admin.produtos.$id'
 
 const CheckoutRoute = CheckoutRouteImport.update({
