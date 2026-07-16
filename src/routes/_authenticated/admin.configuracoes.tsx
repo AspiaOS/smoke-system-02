@@ -486,11 +486,11 @@ function AddBannerDialog({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!file) return toast.error("Selecione uma imagem");
-    if (file.size > 5 * 1024 * 1024) return toast.error("Arquivo maior que 5 MB");
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop() || "jpg";
-      const path = `banners/${crypto.randomUUID()}.${ext}`;
+      const { assertValidImage, safeExtension } = await import("@/lib/upload");
+      assertValidImage(file);
+      const path = `banners/${crypto.randomUUID()}.${safeExtension(file)}`;
       const { error } = await supabase.storage
         .from("product-media")
         .upload(path, file, { contentType: file.type, upsert: false });
