@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { StatCard } from "@/components/admin/StatCard";
 import { ConfirmDeleteDialog } from "@/components/admin/ConfirmDeleteDialog";
+import { useCapabilities } from "@/hooks/use-capabilities";
 
 export const Route = createFileRoute("/_authenticated/admin/categorias")({
   component: CategoriesPage,
@@ -37,6 +38,8 @@ const COLORS = ["#22c55e", "#3b82f6", "#f97316", "#a855f7", "#ec4899", "#eab308"
 
 function CategoriesPage() {
   const qc = useQueryClient();
+  const { can } = useCapabilities();
+  const canManage = can("categories.manage");
   const [name, setName] = useState("");
   const [sortOrder, setSortOrder] = useState(0);
   const [color, setColor] = useState(COLORS[0]);
@@ -153,9 +156,10 @@ function CategoriesPage() {
         <StatCard label="Produtos" value={stats.products} />
       </div>
 
-      <Card>
-        <CardHeader className="pb-3"><CardTitle className="text-base">Nova categoria</CardTitle></CardHeader>
-        <CardContent>
+      {canManage && (
+        <Card>
+          <CardHeader className="pb-3"><CardTitle className="text-base">Nova categoria</CardTitle></CardHeader>
+          <CardContent>
           <form
             className="flex flex-wrap items-end gap-3"
             onSubmit={(e) => {
@@ -196,8 +200,9 @@ function CategoriesPage() {
               <Plus className="h-4 w-4" /> Criar categoria
             </Button>
           </form>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[220px] max-w-sm">
@@ -221,13 +226,13 @@ function CategoriesPage() {
 
       <Card>
         <CardContent className="p-0">
-          <div className="grid grid-cols-[32px_1fr_120px_80px_120px_100px] items-center gap-3 border-b px-4 py-2.5 text-xs font-medium uppercase text-muted-foreground">
-            <span />
+          <div className={`grid ${canManage ? "grid-cols-[32px_1fr_120px_80px_120px_100px]" : "grid-cols-[1fr_120px_80px_120px]"} items-center gap-3 border-b px-4 py-2.5 text-xs font-medium uppercase text-muted-foreground`}>
+            {canManage && <span />}
             <span>Nome</span>
             <span>Produtos</span>
             <span>Ordem</span>
             <span>Status</span>
-            <span className="text-right">Ações</span>
+            {canManage && <span className="text-right">Ações</span>}
           </div>
 
           {isLoading && <p className="p-4 text-sm text-muted-foreground">Carregando…</p>}
@@ -239,16 +244,16 @@ function CategoriesPage() {
             {filtered.map((c) => (
               <li
                 key={c.id}
-                draggable
-                onDragStart={() => setDragId(c.id)}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={() => handleDrop(c.id)}
-                onDragEnd={() => setDragId(null)}
-                className={`grid grid-cols-[32px_1fr_120px_80px_120px_100px] items-center gap-3 border-b px-4 py-3 text-sm last:border-b-0 ${
+                draggable={canManage}
+                onDragStart={() => canManage && setDragId(c.id)}
+                onDragOver={(e) => canManage && e.preventDefault()}
+                onDrop={() => canManage && handleDrop(c.id)}
+                onDragEnd={() => canManage && setDragId(null)}
+                className={`grid ${canManage ? "grid-cols-[32px_1fr_120px_80px_120px_100px]" : "grid-cols-[1fr_120px_80px_120px]"} items-center gap-3 border-b px-4 py-3 text-sm last:border-b-0 ${
                   dragId === c.id ? "opacity-50" : "hover:bg-muted/40"
                 }`}
               >
-                <GripVertical className="h-4 w-4 cursor-grab text-muted-foreground active:cursor-grabbing" />
+                {canManage && <GripVertical className="h-4 w-4 cursor-grab text-muted-foreground active:cursor-grabbing" />}
 
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: c.color }} />
@@ -292,6 +297,7 @@ function CategoriesPage() {
                   <Switch
                     checked={c.active}
                     onCheckedChange={(v) => update.mutate({ id: c.id, active: v })}
+                    disabled={!canManage}
                   />
                   <span className={`inline-flex items-center gap-1.5 text-xs ${c.active ? "text-emerald-500" : "text-muted-foreground"}`}>
                     <span className={`h-1.5 w-1.5 rounded-full ${c.active ? "bg-emerald-500" : "bg-muted-foreground"}`} />
@@ -299,7 +305,7 @@ function CategoriesPage() {
                   </span>
                 </div>
 
-                <div className="flex items-center justify-end gap-1">
+                {canManage && <div className="flex items-center justify-end gap-1">
                   <Button
                     size="icon"
                     variant="ghost"
@@ -318,7 +324,7 @@ function CategoriesPage() {
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
-                </div>
+                </div>}
               </li>
             ))}
           </ul>

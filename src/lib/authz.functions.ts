@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import type { PlatformRole } from "@/lib/authz/matrix";
+import { platformRoleHasCapability, type PlatformCapability, type PlatformRole } from "@/lib/authz/matrix";
 
 /**
  * Retorna o registro de platform_admin do usuário autenticado, ou null.
@@ -24,6 +24,7 @@ export const getPlatformAdminSelf = createServerFn({ method: "GET" })
 async function assertPlatformAdmin(
   supabase: import("@supabase/supabase-js").SupabaseClient,
   userId: string,
+  capability?: PlatformCapability,
 ): Promise<PlatformRole> {
   const { data, error } = await supabase
     .from("platform_admins")
@@ -33,7 +34,11 @@ async function assertPlatformAdmin(
   if (error || !data || !data.active) {
     throw new Response("Forbidden", { status: 403 });
   }
-  return data.role as PlatformRole;
+  const role = data.role as PlatformRole;
+  if (capability && !platformRoleHasCapability(role, capability)) {
+    throw new Response("Forbidden", { status: 403 });
+  }
+  return role;
 }
 
 export type AccountRow = {
@@ -53,7 +58,7 @@ export type AccountRow = {
 export const listAccounts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AccountRow[]> => {
-    await assertPlatformAdmin(context.supabase, context.userId);
+    await assertPlatformAdmin(context.supabase, context.userId, "accounts.view");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: profiles, error: perr } = await supabaseAdmin
@@ -105,7 +110,7 @@ export type StoreRow = {
 export const listStoresForControl = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<StoreRow[]> => {
-    await assertPlatformAdmin(context.supabase, context.userId);
+    await assertPlatformAdmin(context.supabase, context.userId, "stores.view");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: stores, error } = await supabaseAdmin
@@ -149,7 +154,7 @@ export type ControlDashboardMetrics = {
 export const getControlDashboard = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ControlDashboardMetrics> => {
-    await assertPlatformAdmin(context.supabase, context.userId);
+    await assertPlatformAdmin(context.supabase, context.userId, "audit.view");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const [profiles, stores, admins, invites] = await Promise.all([
