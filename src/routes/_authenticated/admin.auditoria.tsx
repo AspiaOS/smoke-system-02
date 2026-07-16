@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/admin/PageHeader";
+import { GithubCalendar } from "@/components/ui/github-calendar";
 
 export const Route = createFileRoute("/_authenticated/admin/auditoria")({
   component: AuditPage,
@@ -66,6 +67,12 @@ function AuditPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Auditoria" description="Últimos 200 eventos do sistema." />
+
+      <Card>
+        <CardContent className="p-4">
+          <GithubCalendar username="harshjdhv" colorSchema="green" />
+        </CardContent>
+      </Card>
 
       <div className="flex gap-2">
         {(["audit", "stock"] as const).map((t) => (
