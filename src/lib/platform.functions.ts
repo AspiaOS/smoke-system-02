@@ -525,7 +525,7 @@ export type AccountDetail = {
     id: string;
     action: string;
     created_at: string;
-    payload: Record<string, unknown> | null;
+    payload: unknown;
   }>;
 };
 
@@ -592,7 +592,7 @@ export const getAccountDetail = createServerFn({ method: "GET" })
         id: e.id,
         action: e.action,
         created_at: e.created_at,
-        payload: (e.payload ?? null) as Record<string, unknown> | null,
+        payload: e.payload ?? null,
       })),
     };
   });
