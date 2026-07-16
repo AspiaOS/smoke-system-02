@@ -29,6 +29,7 @@ import {
 import { toast } from "sonner";
 import { normalizePhoneBR, formatPhoneBR } from "@/lib/phone";
 import { Upload, X, ChevronUp, ChevronDown, ExternalLink, Star, AlertTriangle } from "lucide-react";
+import { useCapabilities } from "@/hooks/use-capabilities";
 
 export const Route = createFileRoute("/_authenticated/admin/configuracoes")({
   component: SettingsPage,
@@ -55,6 +56,8 @@ function maskPhoneBR(input: string): string {
 
 function SettingsPage() {
   const qc = useQueryClient();
+  const { can } = useCapabilities();
+  const canManage = can("settings.manage");
 
   const { data: settings, isLoading, error } = useQuery({
     queryKey: ["store_settings"],
@@ -100,6 +103,7 @@ function SettingsPage() {
 
   const save = useMutation({
     mutationFn: async () => {
+      if (!canManage) throw new Error("Sem permissão para alterar configurações");
       if (!form) throw new Error("Sem loja");
       if (!form.store_display_name.trim()) throw new Error("Nome obrigatório");
       if (!normalizedPhone) throw new Error("WhatsApp inválido (verifique DDD e dígitos)");
@@ -218,6 +222,7 @@ function SettingsPage() {
                     <Input
                       value={form.store_display_name}
                       onChange={(e) => setForm({ ...form, store_display_name: e.target.value })}
+                      readOnly={!canManage}
                       required
                     />
                     <p className="text-xs text-muted-foreground">
@@ -243,6 +248,7 @@ function SettingsPage() {
                         className="flex-1"
                         value={phoneInput}
                         onChange={(e) => setPhoneInput(maskPhoneBR(e.target.value))}
+                        readOnly={!canManage}
                         placeholder="(11) 99999-9999"
                         inputMode="tel"
                       />
@@ -313,7 +319,7 @@ function SettingsPage() {
               variant="outline"
               size="sm"
               onClick={() => setAddingBanner(true)}
-              disabled={form.banners.length >= MAX_BANNERS}
+              disabled={!canManage || form.banners.length >= MAX_BANNERS}
             >
               + Adicionar banner
             </Button>
@@ -329,9 +335,11 @@ function SettingsPage() {
                     Adicione imagens para destacar campanhas, produtos ou novidades na vitrine.
                   </p>
                 </div>
-                <Button variant="outline" onClick={() => setAddingBanner(true)}>
-                  + Adicionar primeiro banner
-                </Button>
+                {canManage && (
+                  <Button variant="outline" onClick={() => setAddingBanner(true)}>
+                    + Adicionar primeiro banner
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ) : (
@@ -344,7 +352,7 @@ function SettingsPage() {
                         <button
                           type="button"
                           className="rounded p-1 text-muted-foreground hover:bg-accent disabled:opacity-30"
-                          disabled={i === 0}
+                          disabled={!canManage || i === 0}
                           onClick={() => moveBanner(i, i - 1)}
                         >
                           <ChevronUp className="h-3 w-3" />
@@ -352,7 +360,7 @@ function SettingsPage() {
                         <button
                           type="button"
                           className="rounded p-1 text-muted-foreground hover:bg-accent disabled:opacity-30"
-                          disabled={i === form.banners.length - 1}
+                          disabled={!canManage || i === form.banners.length - 1}
                           onClick={() => moveBanner(i, i + 1)}
                         >
                           <ChevronDown className="h-3 w-3" />
@@ -369,6 +377,7 @@ function SettingsPage() {
                         <Input
                           value={b.link ?? ""}
                           onChange={(e) => updateBannerLink(i, e.target.value)}
+                          readOnly={!canManage}
                           placeholder="/produto/... ou endereço externo"
                           className="h-8"
                         />
@@ -379,14 +388,16 @@ function SettingsPage() {
                             Visualizar
                           </a>
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => setRemoveIdx(i)}
-                        >
-                          Remover
-                        </Button>
+                        {canManage && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => setRemoveIdx(i)}
+                          >
+                            Remover
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -403,7 +414,7 @@ function SettingsPage() {
       </Tabs>
 
       {/* Sticky save bar */}
-      {dirty && (
+      {dirty && canManage && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 shadow-lg backdrop-blur">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
             <span className="flex items-center gap-2 text-sm">
@@ -423,7 +434,7 @@ function SettingsPage() {
       )}
 
       <AddBannerDialog
-        open={addingBanner}
+        open={addingBanner && canManage}
         onClose={() => setAddingBanner(false)}
         onAdd={(b) => {
           addBanner(b);
