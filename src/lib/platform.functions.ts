@@ -1,5 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { createHash, randomBytes } from "crypto";
+
+const INVITE_ROLES = ["manager", "seller", "stock_operator", "auditor"] as const;
+type InviteRole = (typeof INVITE_ROLES)[number];
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 async function logPlatform(
   admin: import("@supabase/supabase-js").SupabaseClient,
@@ -157,53 +162,113 @@ export const setStoreStatus = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const createAccount = createServerFn({ method: "POST" })
+/**
+ * Convida uma conta para uma loja. Substitui a antiga `createAccount`, que
+ * criava `auth.users` direto e podia gerar contas órfãs.
+ *
+ * - `storeId` e `role` são obrigatórios; recusa ausência/formato inválido.
+ * - Só grava o hash do token; o token em claro só existe no retorno para o
+ *   admin compartilhar o link de convite.
+ * - Não duplica `auth.users`: se o email já tem usuário, o convite continua
+ *   válido e o `payload` da auditoria registra `user_already_exists`.
+ * - Cancela qualquer convite pendente anterior para o mesmo email/loja.
+ * - Auditoria `account.invite` sempre com `email`, `store_id`, `role`, `display_name`.
+ */
+export const inviteAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (d: { email: string; displayName: string; password: string; storeId?: string; role?: string }) => d,
+    (d: { email: string; displayName: string; storeId: string; role: string }) => d,
   )
-  .handler(async ({ data, context }): Promise<{ userId: string }> => {
-    const { assertPlatformAdmin } = await import("@/lib/authz/platform.server");
-    await assertPlatformAdmin(context.supabase, context.userId, "accounts.invite");
-    const email = data.email.trim().toLowerCase();
-    const displayName = data.displayName.trim();
-    if (!email || !displayName || data.password.length < 8) {
-      throw new Response("invalid_input", { status: 400 });
-    }
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: created, error: cerr } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password: data.password,
-      email_confirm: true,
-      user_metadata: { display_name: displayName },
-    });
-    if (cerr || !created.user) throw new Response(cerr?.message ?? "create_user_failed", { status: 400 });
-    const userId = created.user.id;
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{
+      invitationId: string;
+      token: string;
+      link: string;
+      userAlreadyExists: boolean;
+      expiresAt: string;
+    }> => {
+      const { assertPlatformAdmin } = await import("@/lib/authz/platform.server");
+      await assertPlatformAdmin(context.supabase, context.userId, "accounts.invite");
 
-    if (data.storeId) {
-      await supabaseAdmin.from("profiles").upsert(
-        { id: userId, store_id: data.storeId, display_name: displayName, status: "active" },
-        { onConflict: "id" },
-      );
-      await supabaseAdmin.from("store_memberships").upsert(
+      const email = (data.email ?? "").trim().toLowerCase();
+      const displayName = (data.displayName ?? "").trim();
+      const storeId = (data.storeId ?? "").trim();
+      const role = (data.role ?? "").trim() as InviteRole;
+
+      if (!EMAIL_RE.test(email)) throw new Response("invalid_email", { status: 400 });
+      if (!displayName) throw new Response("invalid_display_name", { status: 400 });
+      if (!storeId) throw new Response("store_required", { status: 400 });
+      if (!INVITE_ROLES.includes(role)) throw new Response("invalid_role", { status: 400 });
+
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+      const { data: store, error: serr } = await supabaseAdmin
+        .from("stores")
+        .select("id, name, status")
+        .eq("id", storeId)
+        .maybeSingle();
+      if (serr || !store) throw new Response("store_not_found", { status: 400 });
+
+      // Não duplica auth.users: só sinaliza no payload.
+      const { data: authList } = await supabaseAdmin.auth.admin.listUsers({ perPage: 200 });
+      const userAlreadyExists = !!authList?.users.find((u) => u.email?.toLowerCase() === email);
+
+      // Cancela pendentes anteriores para o mesmo par email/loja.
+      await supabaseAdmin
+        .from("account_invitations")
+        .update({ status: "cancelled" })
+        .eq("store_id", storeId)
+        .eq("email", email)
+        .eq("status", "pending");
+
+      const token = randomBytes(24).toString("base64url");
+      const tokenHash = createHash("sha256").update(token).digest("hex");
+      const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString();
+
+      const { data: inv, error: ierr } = await supabaseAdmin
+        .from("account_invitations")
+        .insert({
+          store_id: storeId,
+          email,
+          role: role as never,
+          invited_by: context.userId,
+          token_hash: tokenHash,
+          status: "pending",
+          expires_at: expiresAt,
+        })
+        .select("id")
+        .single();
+      if (ierr || !inv) throw new Response(ierr?.message ?? "invite_failed", { status: 400 });
+
+      await logPlatform(
+        supabaseAdmin,
+        context.userId,
+        "account.invite",
+        "invitation",
+        inv.id,
         {
-          user_id: userId,
-          store_id: data.storeId,
-          role: (data.role ?? "seller") as never,
-          status: "active",
-          accepted_at: new Date().toISOString(),
+          email,
+          store_id: storeId,
+          role,
+          display_name: displayName,
+          user_already_exists: userAlreadyExists,
+          expires_at: expiresAt,
         },
-        { onConflict: "user_id,store_id" },
+        storeId,
       );
-    }
 
-    await logPlatform(supabaseAdmin, context.userId, "account.create", "account", userId, {
-      email,
-      store_id: data.storeId ?? null,
-      role: data.role ?? null,
-    });
-    return { userId };
-  });
+      return {
+        invitationId: inv.id,
+        token,
+        link: `/invite/${token}`,
+        userAlreadyExists,
+        expiresAt,
+      };
+    },
+  );
 
 export const setAccountStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

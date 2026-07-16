@@ -140,12 +140,34 @@ export const acceptInvite = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: userInfo } = await supabaseAdmin.auth.admin.getUserById(context.userId);
     const email = userInfo.user?.email;
+    const metaDisplayName =
+      (userInfo.user?.user_metadata as { display_name?: string } | undefined)?.display_name;
     if (!email) throw new Response("Missing email", { status: 400 });
     const { data: membershipId, error } = await context.supabase.rpc("accept_store_invite", {
       _token_hash: tokenHash,
       _email: email,
     });
     if (error) throw new Response(error.message, { status: 400 });
+
+    // Garante um profile ativo escopado à loja convidada — sem isso a conta
+    // não aparece em listAccounts (que se baseia em profiles).
+    const { data: mem } = await supabaseAdmin
+      .from("store_memberships")
+      .select("store_id")
+      .eq("id", membershipId as string)
+      .maybeSingle();
+    if (mem?.store_id) {
+      await supabaseAdmin.from("profiles").upsert(
+        {
+          id: context.userId,
+          store_id: mem.store_id,
+          display_name: metaDisplayName || email.split("@")[0],
+          status: "active",
+        },
+        { onConflict: "id" },
+      );
+    }
+
     return { membershipId: membershipId as string };
   });
 
