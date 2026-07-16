@@ -1,7 +1,9 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ControlShell } from "@/components/control/ControlShell";
 import { getPlatformAdminSelf, listStoresForControl } from "@/lib/authz.functions";
+import { platformRoleHasCapability } from "@/lib/authz/matrix";
+
 
 export const Route = createFileRoute("/control/lojas")({
   ssr: false,
@@ -26,10 +28,22 @@ export const Route = createFileRoute("/control/lojas")({
 });
 
 function LojasPage() {
+  const { admin } = Route.useRouteContext();
+  const canCreate = platformRoleHasCapability(admin.role, "stores.create");
   const { data } = useSuspenseQuery({
     queryKey: ["control", "stores"],
     queryFn: () => listStoresForControl(),
   });
+
+  const HeaderActions = canCreate ? (
+    <Link
+      to="/control/lojas/nova"
+      className="inline-flex items-center gap-1 rounded-md border border-violet-500/40 bg-violet-500/10 px-3 py-1.5 text-sm text-violet-200 hover:bg-violet-500/20"
+    >
+      + Nova loja
+    </Link>
+  ) : null;
+
 
   if (data.length === 0) {
     return (
