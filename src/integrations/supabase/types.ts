@@ -995,8 +995,20 @@ export type Database = {
     }
     Functions: {
       accept_order: { Args: { p_order_id: string }; Returns: string }
+      accept_store_invite: {
+        Args: { _email: string; _token_hash: string }
+        Returns: string
+      }
       cancel_order: {
         Args: { p_order_id: string; p_reason: string }
+        Returns: undefined
+      }
+      cancel_store_invite: { Args: { _invite_id: string }; Returns: undefined }
+      change_member_role: {
+        Args: {
+          _membership_id: string
+          _role: Database["public"]["Enums"]["membership_role"]
+        }
         Returns: undefined
       }
       check_rate_limit: {
@@ -1029,6 +1041,33 @@ export type Database = {
           total: number
           whatsapp_number: string
         }[]
+      }
+      create_store_invite: {
+        Args: {
+          _email: string
+          _expires_at: string
+          _role: Database["public"]["Enums"]["membership_role"]
+          _store_id: string
+          _token_hash: string
+        }
+        Returns: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          role: Database["public"]["Enums"]["membership_role"]
+          status: Database["public"]["Enums"]["invitation_status"]
+          store_id: string
+          token_hash: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "account_invitations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       current_store_id: { Args: never; Returns: string }
       expire_pending_orders: { Args: { _older_than?: string }; Returns: number }
@@ -1065,6 +1104,11 @@ export type Database = {
         Args: { _store_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["membership_role"]
       }
+      reactivate_member: {
+        Args: { _membership_id: string }
+        Returns: undefined
+      }
+      remove_member: { Args: { _membership_id: string }; Returns: undefined }
       stock_adjust: {
         Args: { _new_qty: number; _note: string; _variation_id: string }
         Returns: {
@@ -1107,6 +1151,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      suspend_member: { Args: { _membership_id: string }; Returns: undefined }
       variation_store_id: { Args: { _variation_id: string }; Returns: string }
     }
     Enums: {
