@@ -144,51 +144,6 @@ export type Database = {
           },
         ]
       }
-      demo_manifest: {
-        Row: {
-          created_at: string
-          entries: Json
-          error: string | null
-          id: string
-          pre_snapshot: Json | null
-          profile: string
-          run_id: string
-          seed: number
-          status: string
-          summary: Json | null
-          updated_at: string
-          validation: Json | null
-        }
-        Insert: {
-          created_at?: string
-          entries?: Json
-          error?: string | null
-          id?: string
-          pre_snapshot?: Json | null
-          profile: string
-          run_id: string
-          seed: number
-          status: string
-          summary?: Json | null
-          updated_at?: string
-          validation?: Json | null
-        }
-        Update: {
-          created_at?: string
-          entries?: Json
-          error?: string | null
-          id?: string
-          pre_snapshot?: Json | null
-          profile?: string
-          run_id?: string
-          seed?: number
-          status?: string
-          summary?: Json | null
-          updated_at?: string
-          validation?: Json | null
-        }
-        Relationships: []
-      }
       expenses: {
         Row: {
           amount: number

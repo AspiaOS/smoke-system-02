@@ -16,7 +16,6 @@ import {
   LogOut,
   Truck,
   ScrollText,
-  FlaskConical,
   type LucideIcon,
 } from "lucide-react";
 
@@ -43,7 +42,6 @@ const NAV: readonly NavItem[] = [
   { to: "/admin/frete", label: "Frete", icon: Truck, enabled: true },
   { to: "/admin/configuracoes", label: "Configurações", icon: Settings, enabled: true },
   { to: "/admin/auditoria", label: "Auditoria", icon: ScrollText, enabled: true },
-  { to: "/admin/demo", label: "Dados demo", icon: FlaskConical, enabled: true },
 ] as const;
 
 function AdminLayout() {
