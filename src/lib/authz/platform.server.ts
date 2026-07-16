@@ -32,9 +32,12 @@ export async function assertPlatformAdmin(
   if (adminRes.error || !adminRes.data || !adminRes.data.active) {
     throw new Response("Forbidden", { status: 403 });
   }
-  // Ator com profile suspenso/arquivado é barrado mesmo sendo platform_admin.
-  // Ausência de profile também é fail-closed.
-  if (profileRes.error || !profileRes.data || profileRes.data.status !== "active") {
+  // Se o ator tem profile, ele precisa estar 'active'. Ausência de profile é
+  // aceita: platform admins são globais e podem existir sem vínculo de loja
+  // (o schema exige store_id, então nem sempre há profile). Suspender o
+  // profile de um admin continua barrando o acesso.
+  if (profileRes.error) throw new Response("Forbidden", { status: 403 });
+  if (profileRes.data && profileRes.data.status !== "active") {
     throw new Response("Forbidden", { status: 403 });
   }
 
