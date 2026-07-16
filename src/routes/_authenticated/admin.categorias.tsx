@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { StatCard } from "@/components/admin/StatCard";
 import { ConfirmDeleteDialog } from "@/components/admin/ConfirmDeleteDialog";
+import { MagicBento } from "@/components/ui/magic-bento";
 
 export const Route = createFileRoute("/_authenticated/admin/categorias")({
   component: CategoriesPage,
