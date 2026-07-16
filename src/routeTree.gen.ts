@@ -22,8 +22,8 @@ import { Route as ControlContasRouteImport } from './routes/control.contas'
 import { Route as ControlAuditoriaRouteImport } from './routes/control.auditoria'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
-import { Route as ControlLojasNovaRouteImport } from './routes/control.lojas.nova'
-import { Route as ControlContasNovaRouteImport } from './routes/control.contas.nova'
+import { Route as ControlLojasNovaRouteImport } from './routes/control.lojas_.nova'
+import { Route as ControlContasNovaRouteImport } from './routes/control.contas_.nova'
 import { Route as AuthenticatedAdminVendasRouteImport } from './routes/_authenticated/admin.vendas'
 import { Route as AuthenticatedAdminPedidosRouteImport } from './routes/_authenticated/admin.pedidos'
 import { Route as AuthenticatedAdminFreteRouteImport } from './routes/_authenticated/admin.frete'
@@ -103,14 +103,14 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
 const ControlLojasNovaRoute = ControlLojasNovaRouteImport.update({
-  id: '/nova',
-  path: '/nova',
-  getParentRoute: () => ControlLojasRoute,
+  id: '/control/lojas_/nova',
+  path: '/control/lojas/nova',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ControlContasNovaRoute = ControlContasNovaRouteImport.update({
-  id: '/nova',
-  path: '/nova',
-  getParentRoute: () => ControlContasRoute,
+  id: '/control/contas_/nova',
+  path: '/control/contas/nova',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminVendasRoute =
   AuthenticatedAdminVendasRouteImport.update({
@@ -196,9 +196,9 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof CheckoutRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/control/auditoria': typeof ControlAuditoriaRoute
-  '/control/contas': typeof ControlContasRouteWithChildren
+  '/control/contas': typeof ControlContasRoute
   '/control/login': typeof ControlLoginRoute
-  '/control/lojas': typeof ControlLojasRouteWithChildren
+  '/control/lojas': typeof ControlLojasRoute
   '/invite/$token': typeof InviteTokenRoute
   '/p/$id': typeof PIdRoute
   '/control/': typeof ControlIndexRoute
@@ -224,9 +224,9 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/checkout': typeof CheckoutRoute
   '/control/auditoria': typeof ControlAuditoriaRoute
-  '/control/contas': typeof ControlContasRouteWithChildren
+  '/control/contas': typeof ControlContasRoute
   '/control/login': typeof ControlLoginRoute
-  '/control/lojas': typeof ControlLojasRouteWithChildren
+  '/control/lojas': typeof ControlLojasRoute
   '/invite/$token': typeof InviteTokenRoute
   '/p/$id': typeof PIdRoute
   '/control': typeof ControlIndexRoute
@@ -255,9 +255,9 @@ export interface FileRoutesById {
   '/checkout': typeof CheckoutRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/control/auditoria': typeof ControlAuditoriaRoute
-  '/control/contas': typeof ControlContasRouteWithChildren
+  '/control/contas': typeof ControlContasRoute
   '/control/login': typeof ControlLoginRoute
-  '/control/lojas': typeof ControlLojasRouteWithChildren
+  '/control/lojas': typeof ControlLojasRoute
   '/invite/$token': typeof InviteTokenRoute
   '/p/$id': typeof PIdRoute
   '/control/': typeof ControlIndexRoute
@@ -271,8 +271,8 @@ export interface FileRoutesById {
   '/_authenticated/admin/frete': typeof AuthenticatedAdminFreteRoute
   '/_authenticated/admin/pedidos': typeof AuthenticatedAdminPedidosRoute
   '/_authenticated/admin/vendas': typeof AuthenticatedAdminVendasRoute
-  '/control/contas/nova': typeof ControlContasNovaRoute
-  '/control/lojas/nova': typeof ControlLojasNovaRoute
+  '/control/contas_/nova': typeof ControlContasNovaRoute
+  '/control/lojas_/nova': typeof ControlLojasNovaRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/produtos/$id': typeof AuthenticatedAdminProdutosIdRoute
   '/api/public/cron/expire-orders': typeof ApiPublicCronExpireOrdersRoute
@@ -360,8 +360,8 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/frete'
     | '/_authenticated/admin/pedidos'
     | '/_authenticated/admin/vendas'
-    | '/control/contas/nova'
-    | '/control/lojas/nova'
+    | '/control/contas_/nova'
+    | '/control/lojas_/nova'
     | '/_authenticated/admin/'
     | '/_authenticated/admin/produtos/$id'
     | '/api/public/cron/expire-orders'
@@ -374,12 +374,14 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CheckoutRoute: typeof CheckoutRoute
   ControlAuditoriaRoute: typeof ControlAuditoriaRoute
-  ControlContasRoute: typeof ControlContasRouteWithChildren
+  ControlContasRoute: typeof ControlContasRoute
   ControlLoginRoute: typeof ControlLoginRoute
-  ControlLojasRoute: typeof ControlLojasRouteWithChildren
+  ControlLojasRoute: typeof ControlLojasRoute
   InviteTokenRoute: typeof InviteTokenRoute
   PIdRoute: typeof PIdRoute
   ControlIndexRoute: typeof ControlIndexRoute
+  ControlContasNovaRoute: typeof ControlContasNovaRoute
+  ControlLojasNovaRoute: typeof ControlLojasNovaRoute
   ApiPublicCronExpireOrdersRoute: typeof ApiPublicCronExpireOrdersRoute
 }
 
@@ -476,19 +478,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/control/lojas/nova': {
-      id: '/control/lojas/nova'
-      path: '/nova'
+    '/control/lojas_/nova': {
+      id: '/control/lojas_/nova'
+      path: '/control/lojas/nova'
       fullPath: '/control/lojas/nova'
       preLoaderRoute: typeof ControlLojasNovaRouteImport
-      parentRoute: typeof ControlLojasRoute
+      parentRoute: typeof rootRouteImport
     }
-    '/control/contas/nova': {
-      id: '/control/contas/nova'
-      path: '/nova'
+    '/control/contas_/nova': {
+      id: '/control/contas_/nova'
+      path: '/control/contas/nova'
       fullPath: '/control/contas/nova'
       preLoaderRoute: typeof ControlContasNovaRouteImport
-      parentRoute: typeof ControlContasRoute
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin/vendas': {
       id: '/_authenticated/admin/vendas'
@@ -630,54 +632,22 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
-interface ControlContasRouteChildren {
-  ControlContasNovaRoute: typeof ControlContasNovaRoute
-}
-
-const ControlContasRouteChildren: ControlContasRouteChildren = {
-  ControlContasNovaRoute: ControlContasNovaRoute,
-}
-
-const ControlContasRouteWithChildren = ControlContasRoute._addFileChildren(
-  ControlContasRouteChildren,
-)
-
-interface ControlLojasRouteChildren {
-  ControlLojasNovaRoute: typeof ControlLojasNovaRoute
-}
-
-const ControlLojasRouteChildren: ControlLojasRouteChildren = {
-  ControlLojasNovaRoute: ControlLojasNovaRoute,
-}
-
-const ControlLojasRouteWithChildren = ControlLojasRoute._addFileChildren(
-  ControlLojasRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   CheckoutRoute: CheckoutRoute,
   ControlAuditoriaRoute: ControlAuditoriaRoute,
-  ControlContasRoute: ControlContasRouteWithChildren,
+  ControlContasRoute: ControlContasRoute,
   ControlLoginRoute: ControlLoginRoute,
-  ControlLojasRoute: ControlLojasRouteWithChildren,
+  ControlLojasRoute: ControlLojasRoute,
   InviteTokenRoute: InviteTokenRoute,
   PIdRoute: PIdRoute,
   ControlIndexRoute: ControlIndexRoute,
+  ControlContasNovaRoute: ControlContasNovaRoute,
+  ControlLojasNovaRoute: ControlLojasNovaRoute,
   ApiPublicCronExpireOrdersRoute: ApiPublicCronExpireOrdersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
