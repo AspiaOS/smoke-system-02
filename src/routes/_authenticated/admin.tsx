@@ -44,7 +44,9 @@ const NAV: readonly NavItem[] = [
   { to: "/admin/frete", label: "Frete", icon: Truck, capability: "shipping.view" },
   { to: "/admin/configuracoes", label: "Configurações", icon: Settings, capability: "settings.view" },
   { to: "/admin/auditoria", label: "Auditoria", icon: ScrollText, capability: "audit.view" },
+  { to: "/admin/equipe", label: "Equipe", icon: Users, capability: "members.view" },
 ] as const;
+
 
 function AdminLayout() {
   const navigate = useNavigate();
