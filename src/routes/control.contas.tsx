@@ -23,14 +23,14 @@ export const Route = createFileRoute("/control/contas")({
       <div className="text-red-400 text-sm">Erro: {String((error as Error)?.message ?? error)}</div>
     </ControlShell>
   ),
-  notFoundComponent: () => <div className="p-8 text-neutral-400">Página não encontrada.</div>,
+  notFoundComponent: () => <div className="p-8 text-muted-foreground">Página não encontrada.</div>,
   component: ContasPage,
 });
 
 const STATUS_COLORS: Record<string, string> = {
   active: "text-emerald-300 bg-emerald-500/10 border-emerald-500/30",
   suspended: "text-amber-300 bg-amber-500/10 border-amber-500/30",
-  archived: "text-neutral-400 bg-neutral-500/10 border-neutral-600/30",
+  archived: "text-muted-foreground bg-muted border-border",
 };
 
 function ContasPage() {
@@ -47,21 +47,21 @@ function ContasPage() {
         {canInvite && (
           <Link
             to="/control/contas/nova"
-            className="inline-flex items-center gap-1 rounded-md border border-violet-500/40 bg-violet-500/10 px-3 py-1.5 text-sm text-violet-200 hover:bg-violet-500/20"
+            className="inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/20"
           >
             + Nova conta
           </Link>
         )}
       </div>
       {data.length === 0 ? (
-        <div className="text-neutral-500 text-sm py-16 text-center border border-dashed border-neutral-800 rounded-lg">
+        <div className="text-muted-foreground text-sm py-16 text-center border border-dashed border-border rounded-lg">
           Nenhuma conta encontrada.
         </div>
       ) : (
         <>
-          <div className="border border-neutral-800 rounded-lg overflow-hidden bg-[#111014]">
+          <div className="border border-border rounded-lg overflow-hidden bg-card">
             <table className="w-full text-sm">
-              <thead className="bg-black/40 text-neutral-500 text-xs uppercase tracking-wide">
+              <thead className="bg-muted text-muted-foreground text-xs uppercase tracking-wide">
                 <tr>
                   <th className="text-left px-4 py-3">Nome</th>
                   <th className="text-left px-4 py-3">Email</th>
@@ -72,13 +72,13 @@ function ContasPage() {
               </thead>
               <tbody>
                 {data.map((row) => (
-                  <tr key={row.id} className="border-t border-neutral-800">
+                  <tr key={row.id} className="border-t border-border">
                     <td className="px-4 py-3">
-                      <Link to="/control/contas/$id" params={{ id: row.id }} className="text-violet-300 hover:underline">
+                      <Link to="/control/contas/$id" params={{ id: row.id }} className="text-primary hover:underline">
                         {row.display_name || row.email || "—"}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-neutral-400">{row.email || "—"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{row.email || "—"}</td>
                     <td className="px-4 py-3">
                       <span
                         className={`inline-block text-xs px-2 py-0.5 rounded border ${
@@ -88,14 +88,14 @@ function ContasPage() {
                         {row.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-neutral-400">
+                    <td className="px-4 py-3 text-muted-foreground">
                       {row.memberships.length === 0
                         ? "—"
                         : row.memberships
                             .map((m) => `${m.role}${m.status !== "active" ? ` (${m.status})` : ""}`)
                             .join(", ")}
                     </td>
-                    <td className="px-4 py-3 text-neutral-500">
+                    <td className="px-4 py-3 text-muted-foreground">
                       {new Date(row.created_at).toLocaleDateString("pt-BR")}
                     </td>
                   </tr>
@@ -103,7 +103,7 @@ function ContasPage() {
               </tbody>
             </table>
           </div>
-          <p className="text-xs text-neutral-600 mt-4">{data.length} conta(s).</p>
+          <p className="text-xs text-muted-foreground mt-4">{data.length} conta(s).</p>
         </>
       )}
     </ControlShell>

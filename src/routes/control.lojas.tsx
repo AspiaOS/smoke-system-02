@@ -23,7 +23,7 @@ export const Route = createFileRoute("/control/lojas")({
       <div className="text-red-400 text-sm">Erro: {String((error as Error)?.message ?? error)}</div>
     </ControlShell>
   ),
-  notFoundComponent: () => <div className="p-8 text-neutral-400">Página não encontrada.</div>,
+  notFoundComponent: () => <div className="p-8 text-muted-foreground">Página não encontrada.</div>,
   component: LojasPage,
 });
 
@@ -38,7 +38,7 @@ function LojasPage() {
   const HeaderActions = canCreate ? (
     <Link
       to="/control/lojas/nova"
-      className="inline-flex items-center gap-1 rounded-md border border-violet-500/40 bg-violet-500/10 px-3 py-1.5 text-sm text-violet-200 hover:bg-violet-500/20"
+      className="inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/20"
     >
       + Nova loja
     </Link>
@@ -49,14 +49,14 @@ function LojasPage() {
     <ControlShell title="Lojas">
       <div className="flex justify-end mb-4">{HeaderActions}</div>
       {data.length === 0 ? (
-        <div className="text-neutral-500 text-sm py-16 text-center border border-dashed border-neutral-800 rounded-lg">
+        <div className="text-muted-foreground text-sm py-16 text-center border border-dashed border-border rounded-lg">
           Nenhuma loja cadastrada.
         </div>
       ) : (
         <>
-          <div className="border border-neutral-800 rounded-lg overflow-hidden bg-[#111014]">
+          <div className="border border-border rounded-lg overflow-hidden bg-card">
             <table className="w-full text-sm">
-              <thead className="bg-black/40 text-neutral-500 text-xs uppercase tracking-wide">
+              <thead className="bg-muted text-muted-foreground text-xs uppercase tracking-wide">
                 <tr>
                   <th className="text-left px-4 py-3">Nome</th>
                   <th className="text-left px-4 py-3">Status</th>
@@ -67,9 +67,9 @@ function LojasPage() {
               </thead>
               <tbody>
                 {data.map((s) => (
-                  <tr key={s.id} className="border-t border-neutral-800">
+                  <tr key={s.id} className="border-t border-border">
                     <td className="px-4 py-3 font-medium">
-                      <Link to="/control/lojas/$id" params={{ id: s.id }} className="text-violet-300 hover:underline">
+                      <Link to="/control/lojas/$id" params={{ id: s.id }} className="text-primary hover:underline">
                         {s.name}
                       </Link>
                     </td>
@@ -84,9 +84,9 @@ function LojasPage() {
                         {s.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-neutral-400">{s.owners}</td>
-                    <td className="px-4 py-3 text-neutral-400">{s.members}</td>
-                    <td className="px-4 py-3 text-neutral-500">
+                    <td className="px-4 py-3 text-muted-foreground">{s.owners}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{s.members}</td>
+                    <td className="px-4 py-3 text-muted-foreground">
                       {new Date(s.created_at).toLocaleDateString("pt-BR")}
                     </td>
                   </tr>
@@ -94,7 +94,7 @@ function LojasPage() {
               </tbody>
             </table>
           </div>
-          <p className="text-xs text-neutral-600 mt-4">{data.length} loja(s).</p>
+          <p className="text-xs text-muted-foreground mt-4">{data.length} loja(s).</p>
         </>
       )}
     </ControlShell>

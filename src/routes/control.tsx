@@ -43,12 +43,12 @@ export const Route = createFileRoute("/control")({
     const msg = (error as Error)?.message ?? String(error);
     if (msg === "UNAUTHORIZED_CONTROL") {
       return (
-        <div className="min-h-screen bg-[#0a0a0c] text-neutral-200 flex items-center justify-center p-8">
-          <div className="max-w-md text-center border border-neutral-800 rounded-lg p-8 bg-[#111014]">
+        <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-8">
+          <div className="max-w-md text-center border border-border rounded-lg p-8 bg-card">
             <h1 className="text-2xl font-semibold text-red-400 mb-3">
               Acesso não autorizado
             </h1>
-            <p className="text-sm text-neutral-400">
+            <p className="text-sm text-muted-foreground">
               Sua conta não tem permissão para acessar a Central de Controle.
             </p>
           </div>

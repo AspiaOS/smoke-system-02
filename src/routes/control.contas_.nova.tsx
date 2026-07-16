@@ -155,8 +155,8 @@ function NovaContaPage() {
             required
           />
         </div>
-        <div className="pt-4 border-t border-neutral-800 space-y-4">
-          <h2 className="text-sm font-medium text-neutral-300">Loja e papel (obrigatórios)</h2>
+        <div className="pt-4 border-t border-border space-y-4">
+          <h2 className="text-sm font-medium text-foreground">Loja e papel (obrigatórios)</h2>
           <div>
             <Label>Loja</Label>
             <Select value={storeId} onValueChange={setStoreId}>

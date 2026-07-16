@@ -42,36 +42,36 @@ function ControlLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-neutral-100 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-surface-contrast text-foreground flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-2 mb-8">
-          <ShieldCheck className="h-6 w-6 text-violet-400" />
+          <ShieldCheck className="h-6 w-6 text-primary" />
           <div>
             <div className="font-semibold tracking-wide">SMOKE CONTROL</div>
-            <div className="text-xs text-neutral-500">Central de administração</div>
+            <div className="text-xs text-muted-foreground">Central de administração</div>
           </div>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4 bg-[#111014] border border-neutral-800 rounded-lg p-6">
+        <form onSubmit={handleSubmit} className="space-y-4 bg-card border border-border rounded-lg p-6">
           <div>
-            <label className="block text-xs text-neutral-400 mb-1">Email</label>
+            <label className="block text-xs text-muted-foreground mb-1">Email</label>
             <input
               type="email"
               required
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-black border border-neutral-800 rounded px-3 py-2 text-sm focus:border-violet-500 focus:outline-none"
+              className="w-full bg-surface-contrast border border-border rounded px-3 py-2 text-sm focus:border-primary focus:outline-none"
             />
           </div>
           <div>
-            <label className="block text-xs text-neutral-400 mb-1">Senha</label>
+            <label className="block text-xs text-muted-foreground mb-1">Senha</label>
             <input
               type="password"
               required
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-black border border-neutral-800 rounded px-3 py-2 text-sm focus:border-violet-500 focus:outline-none"
+              className="w-full bg-surface-contrast border border-border rounded px-3 py-2 text-sm focus:border-primary focus:outline-none"
             />
           </div>
           {error ? (
@@ -82,12 +82,12 @@ function ControlLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-violet-500 hover:bg-violet-400 text-black font-medium rounded px-3 py-2 text-sm disabled:opacity-50"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded px-3 py-2 text-sm disabled:opacity-50"
           >
             {loading ? "Entrando…" : "Entrar"}
           </button>
         </form>
-        <p className="text-xs text-neutral-600 mt-6 text-center">
+        <p className="text-xs text-muted-foreground mt-6 text-center">
           Acesso restrito a administradores da plataforma.
         </p>
       </div>
