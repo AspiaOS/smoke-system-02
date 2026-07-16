@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatBRL, numericToCents } from "@/lib/money";
 import { Badge } from "@/components/ui/badge";
+import { MagicBento } from "@/components/ui/magic-bento";
 import {
   ResponsiveContainer,
   AreaChart,
