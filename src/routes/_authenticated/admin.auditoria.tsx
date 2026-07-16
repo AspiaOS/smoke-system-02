@@ -66,9 +66,9 @@ function AuditPage() {
   const navigate = Route.useNavigate();
 
   const setTab = (t: "events" | "stock") =>
-    navigate({ search: (prev) => ({ ...prev, tab: t }), replace: true });
+    navigate({ search: (prev: { tab: "events" | "stock"; date?: string }) => ({ ...prev, tab: t }), replace: true });
   const setDate = (d: string | null) =>
-    navigate({ search: (prev) => ({ ...prev, date: d ?? undefined }), replace: true });
+    navigate({ search: (prev: { tab: "events" | "stock"; date?: string }) => ({ ...prev, date: d ?? undefined }), replace: true });
 
   const { from, to } = useMemo(() => {
     const t = today();
