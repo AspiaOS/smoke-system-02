@@ -73,7 +73,11 @@ function ContasPage() {
               <tbody>
                 {data.map((row) => (
                   <tr key={row.id} className="border-t border-neutral-800">
-                    <td className="px-4 py-3">{row.display_name || "—"}</td>
+                    <td className="px-4 py-3">
+                      <Link to="/control/contas/$id" params={{ id: row.id }} className="text-violet-300 hover:underline">
+                        {row.display_name || row.email || "—"}
+                      </Link>
+                    </td>
                     <td className="px-4 py-3 text-neutral-400">{row.email || "—"}</td>
                     <td className="px-4 py-3">
                       <span
