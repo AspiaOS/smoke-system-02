@@ -25,6 +25,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as ControlLojasNovaRouteImport } from './routes/control.lojas_.nova'
 import { Route as ControlContasNovaRouteImport } from './routes/control.contas_.nova'
+import { Route as ControlContasIdRouteImport } from './routes/control.contas_.$id'
 import { Route as AuthenticatedAdminVendasRouteImport } from './routes/_authenticated/admin.vendas'
 import { Route as AuthenticatedAdminPedidosRouteImport } from './routes/_authenticated/admin.pedidos'
 import { Route as AuthenticatedAdminFreteRouteImport } from './routes/_authenticated/admin.frete'
@@ -116,6 +117,11 @@ const ControlLojasNovaRoute = ControlLojasNovaRouteImport.update({
 const ControlContasNovaRoute = ControlContasNovaRouteImport.update({
   id: '/contas_/nova',
   path: '/contas/nova',
+  getParentRoute: () => ControlRoute,
+} as any)
+const ControlContasIdRoute = ControlContasIdRouteImport.update({
+  id: '/contas_/$id',
+  path: '/contas/$id',
   getParentRoute: () => ControlRoute,
 } as any)
 const AuthenticatedAdminVendasRoute =
@@ -219,6 +225,7 @@ export interface FileRoutesByFullPath {
   '/admin/frete': typeof AuthenticatedAdminFreteRoute
   '/admin/pedidos': typeof AuthenticatedAdminPedidosRoute
   '/admin/vendas': typeof AuthenticatedAdminVendasRoute
+  '/control/contas/$id': typeof ControlContasIdRoute
   '/control/contas/nova': typeof ControlContasNovaRoute
   '/control/lojas/nova': typeof ControlLojasNovaRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -247,6 +254,7 @@ export interface FileRoutesByTo {
   '/admin/frete': typeof AuthenticatedAdminFreteRoute
   '/admin/pedidos': typeof AuthenticatedAdminPedidosRoute
   '/admin/vendas': typeof AuthenticatedAdminVendasRoute
+  '/control/contas/$id': typeof ControlContasIdRoute
   '/control/contas/nova': typeof ControlContasNovaRoute
   '/control/lojas/nova': typeof ControlLojasNovaRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -279,6 +287,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/frete': typeof AuthenticatedAdminFreteRoute
   '/_authenticated/admin/pedidos': typeof AuthenticatedAdminPedidosRoute
   '/_authenticated/admin/vendas': typeof AuthenticatedAdminVendasRoute
+  '/control/contas_/$id': typeof ControlContasIdRoute
   '/control/contas_/nova': typeof ControlContasNovaRoute
   '/control/lojas_/nova': typeof ControlLojasNovaRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -311,6 +320,7 @@ export interface FileRouteTypes {
     | '/admin/frete'
     | '/admin/pedidos'
     | '/admin/vendas'
+    | '/control/contas/$id'
     | '/control/contas/nova'
     | '/control/lojas/nova'
     | '/admin/'
@@ -339,6 +349,7 @@ export interface FileRouteTypes {
     | '/admin/frete'
     | '/admin/pedidos'
     | '/admin/vendas'
+    | '/control/contas/$id'
     | '/control/contas/nova'
     | '/control/lojas/nova'
     | '/admin'
@@ -370,6 +381,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/frete'
     | '/_authenticated/admin/pedidos'
     | '/_authenticated/admin/vendas'
+    | '/control/contas_/$id'
     | '/control/contas_/nova'
     | '/control/lojas_/nova'
     | '/_authenticated/admin/'
@@ -501,6 +513,13 @@ declare module '@tanstack/react-router' {
       path: '/contas/nova'
       fullPath: '/control/contas/nova'
       preLoaderRoute: typeof ControlContasNovaRouteImport
+      parentRoute: typeof ControlRoute
+    }
+    '/control/contas_/$id': {
+      id: '/control/contas_/$id'
+      path: '/contas/$id'
+      fullPath: '/control/contas/$id'
+      preLoaderRoute: typeof ControlContasIdRouteImport
       parentRoute: typeof ControlRoute
     }
     '/_authenticated/admin/vendas': {
@@ -649,6 +668,7 @@ interface ControlRouteChildren {
   ControlLoginRoute: typeof ControlLoginRoute
   ControlLojasRoute: typeof ControlLojasRoute
   ControlIndexRoute: typeof ControlIndexRoute
+  ControlContasIdRoute: typeof ControlContasIdRoute
   ControlContasNovaRoute: typeof ControlContasNovaRoute
   ControlLojasNovaRoute: typeof ControlLojasNovaRoute
 }
@@ -659,6 +679,7 @@ const ControlRouteChildren: ControlRouteChildren = {
   ControlLoginRoute: ControlLoginRoute,
   ControlLojasRoute: ControlLojasRoute,
   ControlIndexRoute: ControlIndexRoute,
+  ControlContasIdRoute: ControlContasIdRoute,
   ControlContasNovaRoute: ControlContasNovaRoute,
   ControlLojasNovaRoute: ControlLojasNovaRoute,
 }
