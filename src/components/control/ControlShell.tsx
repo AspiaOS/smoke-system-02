@@ -7,6 +7,7 @@ const NAV = [
   { to: "/control", label: "Visão geral", icon: LayoutDashboard, exact: true },
   { to: "/control/contas", label: "Contas", icon: Users, exact: false },
   { to: "/control/lojas", label: "Lojas", icon: Store, exact: false },
+  { to: "/control/auditoria", label: "Auditoria", icon: ScrollText, exact: false },
 ] as const;
 
 export function ControlShell({ children, title }: { children: ReactNode; title: string }) {
