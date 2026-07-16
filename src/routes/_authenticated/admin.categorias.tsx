@@ -14,18 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { GripVertical, Pencil, Trash2, Search, Check, X, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/admin/PageHeader";
+import { StatCard } from "@/components/admin/StatCard";
+import { ConfirmDeleteDialog } from "@/components/admin/ConfirmDeleteDialog";
 
 export const Route = createFileRoute("/_authenticated/admin/categorias")({
   component: CategoriesPage,
@@ -149,17 +142,15 @@ function CategoriesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Categorias</h1>
-        <p className="text-sm text-muted-foreground">
-          Organize como seus produtos aparecem na loja. Categorias desativadas ficam ocultas da vitrine.
-        </p>
-      </div>
+      <PageHeader
+        title="Categorias"
+        description="Organize como seus produtos aparecem na loja. Categorias desativadas ficam ocultas da vitrine."
+      />
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <Stat label="Categorias" value={stats.total} />
-        <Stat label="Ativas" value={stats.active} />
-        <Stat label="Produtos" value={stats.products} />
+        <StatCard label="Categorias" value={stats.total} />
+        <StatCard label="Ativas" value={stats.active} />
+        <StatCard label="Produtos" value={stats.products} />
       </div>
 
       <Card>
@@ -334,38 +325,17 @@ function CategoriesPage() {
         </CardContent>
       </Card>
 
-      <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir "{toDelete?.name}"?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {toDelete && toDelete.product_count > 0
-                ? `Esta categoria possui ${toDelete.product_count} ${toDelete.product_count === 1 ? "produto" : "produtos"}. A exclusão será bloqueada se houver produtos vinculados.`
-                : "Esta ação não pode ser desfeita."}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => toDelete && remove.mutate(toDelete.id)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDeleteDialog
+        open={!!toDelete}
+        onOpenChange={(o) => !o && setToDelete(null)}
+        title={`Excluir "${toDelete?.name ?? ""}"?`}
+        description={
+          toDelete && toDelete.product_count > 0
+            ? `Esta categoria possui ${toDelete.product_count} ${toDelete.product_count === 1 ? "produto" : "produtos"}. A exclusão será bloqueada se houver produtos vinculados.`
+            : "Esta ação não pode ser desfeita."
+        }
+        onConfirm={() => toDelete && remove.mutate(toDelete.id)}
+      />
     </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <Card>
-      <CardContent className="p-4">
-        <p className="text-2xl font-semibold tabular-nums">{value}</p>
-        <p className="text-xs uppercase text-muted-foreground">{label}</p>
-      </CardContent>
-    </Card>
   );
 }
