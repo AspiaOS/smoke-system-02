@@ -110,8 +110,9 @@ function ProductsPage() {
       if (error) throw error;
 
       for (const file of images) {
-        const ext = file.name.split(".").pop() || "jpg";
-        const path = `${prod.id}/${crypto.randomUUID()}.${ext}`;
+        const { assertValidImage, safeExtension } = await import("@/lib/upload");
+        assertValidImage(file);
+        const path = `${prod.id}/${crypto.randomUUID()}.${safeExtension(file)}`;
         const { error: upErr } = await supabase.storage
           .from("product-media")
           .upload(path, file, { contentType: file.type, upsert: false });
