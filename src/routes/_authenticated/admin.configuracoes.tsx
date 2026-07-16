@@ -56,7 +56,7 @@ function maskPhoneBR(input: string): string {
 function SettingsPage() {
   const qc = useQueryClient();
 
-  const { data: settings, isLoading } = useQuery({
+  const { data: settings, isLoading, error } = useQuery({
     queryKey: ["store_settings"],
     queryFn: async () => {
       const { data, error } = await supabase.from("store_settings").select("*").maybeSingle();
@@ -154,7 +154,22 @@ function SettingsPage() {
     setForm({ ...form, banners: form.banners.filter((_, idx) => idx !== i) });
   }
 
-  if (isLoading || !form) return <p className="text-sm text-muted-foreground">Carregando…</p>;
+  if (isLoading) return <p className="text-sm text-muted-foreground">Carregando…</p>;
+  if (error) {
+    return (
+      <p className="text-sm text-destructive">
+        Erro ao carregar configurações: {error instanceof Error ? error.message : "desconhecido"}
+      </p>
+    );
+  }
+  if (!settings) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Nenhuma loja configurada. Crie uma loja para acessar as configurações.
+      </p>
+    );
+  }
+  if (!form) return <p className="text-sm text-muted-foreground">Carregando…</p>;
 
   const waLink = normalizedPhone
     ? `https://wa.me/${normalizedPhone.replace(/\D/g, "")}?text=${encodeURIComponent("Teste da vitrine ✔")}`
