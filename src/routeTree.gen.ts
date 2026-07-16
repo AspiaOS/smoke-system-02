@@ -15,6 +15,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ControlIndexRouteImport } from './routes/control.index'
 import { Route as PIdRouteImport } from './routes/p.$id'
+import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as ControlLojasRouteImport } from './routes/control.lojas'
 import { Route as ControlLoginRouteImport } from './routes/control.login'
 import { Route as ControlContasRouteImport } from './routes/control.contas'
@@ -61,6 +62,11 @@ const ControlIndexRoute = ControlIndexRouteImport.update({
 const PIdRoute = PIdRouteImport.update({
   id: '/p/$id',
   path: '/p/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ControlLojasRoute = ControlLojasRouteImport.update({
@@ -174,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/control/contas': typeof ControlContasRoute
   '/control/login': typeof ControlLoginRoute
   '/control/lojas': typeof ControlLojasRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/p/$id': typeof PIdRoute
   '/control/': typeof ControlIndexRoute
   '/admin/auditoria': typeof AuthenticatedAdminAuditoriaRoute
@@ -198,6 +205,7 @@ export interface FileRoutesByTo {
   '/control/contas': typeof ControlContasRoute
   '/control/login': typeof ControlLoginRoute
   '/control/lojas': typeof ControlLojasRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/p/$id': typeof PIdRoute
   '/control': typeof ControlIndexRoute
   '/admin/auditoria': typeof AuthenticatedAdminAuditoriaRoute
@@ -225,6 +233,7 @@ export interface FileRoutesById {
   '/control/contas': typeof ControlContasRoute
   '/control/login': typeof ControlLoginRoute
   '/control/lojas': typeof ControlLojasRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/p/$id': typeof PIdRoute
   '/control/': typeof ControlIndexRoute
   '/_authenticated/admin/auditoria': typeof AuthenticatedAdminAuditoriaRoute
@@ -252,6 +261,7 @@ export interface FileRouteTypes {
     | '/control/contas'
     | '/control/login'
     | '/control/lojas'
+    | '/invite/$token'
     | '/p/$id'
     | '/control/'
     | '/admin/auditoria'
@@ -276,6 +286,7 @@ export interface FileRouteTypes {
     | '/control/contas'
     | '/control/login'
     | '/control/lojas'
+    | '/invite/$token'
     | '/p/$id'
     | '/control'
     | '/admin/auditoria'
@@ -302,6 +313,7 @@ export interface FileRouteTypes {
     | '/control/contas'
     | '/control/login'
     | '/control/lojas'
+    | '/invite/$token'
     | '/p/$id'
     | '/control/'
     | '/_authenticated/admin/auditoria'
@@ -328,6 +340,7 @@ export interface RootRouteChildren {
   ControlContasRoute: typeof ControlContasRoute
   ControlLoginRoute: typeof ControlLoginRoute
   ControlLojasRoute: typeof ControlLojasRoute
+  InviteTokenRoute: typeof InviteTokenRoute
   PIdRoute: typeof PIdRoute
   ControlIndexRoute: typeof ControlIndexRoute
   ApiPublicCronExpireOrdersRoute: typeof ApiPublicCronExpireOrdersRoute
@@ -375,6 +388,13 @@ declare module '@tanstack/react-router' {
       path: '/p/$id'
       fullPath: '/p/$id'
       preLoaderRoute: typeof PIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/control/lojas': {
@@ -560,6 +580,7 @@ const rootRouteChildren: RootRouteChildren = {
   ControlContasRoute: ControlContasRoute,
   ControlLoginRoute: ControlLoginRoute,
   ControlLojasRoute: ControlLojasRoute,
+  InviteTokenRoute: InviteTokenRoute,
   PIdRoute: PIdRoute,
   ControlIndexRoute: ControlIndexRoute,
   ApiPublicCronExpireOrdersRoute: ApiPublicCronExpireOrdersRoute,
