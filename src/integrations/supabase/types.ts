@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          role: Database["public"]["Enums"]["membership_role"]
+          status: Database["public"]["Enums"]["invitation_status"]
+          store_id: string
+          token_hash: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          invited_by?: string | null
+          role: Database["public"]["Enums"]["membership_role"]
+          status?: Database["public"]["Enums"]["invitation_status"]
+          store_id: string
+          token_hash: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          role?: Database["public"]["Enums"]["membership_role"]
+          status?: Database["public"]["Enums"]["invitation_status"]
+          store_id?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_invitations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_allowlist: {
         Row: {
           created_at: string
@@ -362,6 +409,95 @@ export type Database = {
           },
         ]
       }
+      platform_admin_allowlist: {
+        Row: {
+          created_at: string
+          email: string
+          role: Database["public"]["Enums"]["platform_role"]
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          role?: Database["public"]["Enums"]["platform_role"]
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          role?: Database["public"]["Enums"]["platform_role"]
+        }
+        Relationships: []
+      }
+      platform_admins: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          role: Database["public"]["Enums"]["platform_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          role: Database["public"]["Enums"]["platform_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          role?: Database["public"]["Enums"]["platform_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      platform_audit_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          id: string
+          ip_hash: string | null
+          payload: Json
+          store_id: string | null
+          target_id: string | null
+          target_type: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          payload?: Json
+          store_id?: string | null
+          target_id?: string | null
+          target_type: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          payload?: Json
+          store_id?: string | null
+          target_id?: string | null
+          target_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_audit_logs_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           active: boolean
@@ -430,6 +566,8 @@ export type Database = {
           created_at: string
           display_name: string
           id: string
+          last_seen_at: string | null
+          status: Database["public"]["Enums"]["account_status"]
           store_id: string
           updated_at: string
         }
@@ -437,6 +575,8 @@ export type Database = {
           created_at?: string
           display_name?: string
           id: string
+          last_seen_at?: string | null
+          status?: Database["public"]["Enums"]["account_status"]
           store_id: string
           updated_at?: string
         }
@@ -444,6 +584,8 @@ export type Database = {
           created_at?: string
           display_name?: string
           id?: string
+          last_seen_at?: string | null
+          status?: Database["public"]["Enums"]["account_status"]
           store_id?: string
           updated_at?: string
         }
@@ -603,6 +745,59 @@ export type Database = {
           },
         ]
       }
+      store_memberships: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          id: string
+          invited_at: string | null
+          invited_by: string | null
+          removed_at: string | null
+          role: Database["public"]["Enums"]["membership_role"]
+          status: Database["public"]["Enums"]["membership_status"]
+          store_id: string
+          suspended_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          removed_at?: string | null
+          role: Database["public"]["Enums"]["membership_role"]
+          status?: Database["public"]["Enums"]["membership_status"]
+          store_id: string
+          suspended_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          removed_at?: string | null
+          role?: Database["public"]["Enums"]["membership_role"]
+          status?: Database["public"]["Enums"]["membership_status"]
+          store_id?: string
+          suspended_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_memberships_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_settings: {
         Row: {
           banners: Json
@@ -640,16 +835,25 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          status: Database["public"]["Enums"]["store_status"]
+          suspended_at: string | null
+          suspended_reason: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           name: string
+          status?: Database["public"]["Enums"]["store_status"]
+          suspended_at?: string | null
+          suspended_reason?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           name?: string
+          status?: Database["public"]["Enums"]["store_status"]
+          suspended_at?: string | null
+          suspended_reason?: string | null
         }
         Relationships: []
       }
@@ -847,7 +1051,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_store_membership: {
+        Args: { _store_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_owner: { Args: never; Returns: boolean }
+      is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
+      membership_role_in: {
+        Args: { _store_id: string; _user_id: string }
+        Returns: Database["public"]["Enums"]["membership_role"]
+      }
       stock_adjust: {
         Args: { _new_qty: number; _note: string; _variation_id: string }
         Returns: {
@@ -893,10 +1106,21 @@ export type Database = {
       variation_store_id: { Args: { _variation_id: string }; Returns: string }
     }
     Enums: {
+      account_status: "active" | "suspended" | "archived"
       app_role: "owner" | "manager" | "seller" | "stock_operator"
+      invitation_status: "pending" | "accepted" | "expired" | "cancelled"
+      membership_role:
+        | "owner"
+        | "manager"
+        | "seller"
+        | "stock_operator"
+        | "auditor"
+      membership_status: "invited" | "active" | "suspended" | "removed"
       order_status: "pending" | "accepted" | "cancelled"
       payment_method: "pix" | "cash" | "debit" | "credit"
+      platform_role: "super_admin" | "support_admin" | "security_auditor"
       stock_movement_type: "entry" | "adjustment" | "sale_accept"
+      store_status: "active" | "suspended"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1024,10 +1248,22 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_status: ["active", "suspended", "archived"],
       app_role: ["owner", "manager", "seller", "stock_operator"],
+      invitation_status: ["pending", "accepted", "expired", "cancelled"],
+      membership_role: [
+        "owner",
+        "manager",
+        "seller",
+        "stock_operator",
+        "auditor",
+      ],
+      membership_status: ["invited", "active", "suspended", "removed"],
       order_status: ["pending", "accepted", "cancelled"],
       payment_method: ["pix", "cash", "debit", "credit"],
+      platform_role: ["super_admin", "support_admin", "security_auditor"],
       stock_movement_type: ["entry", "adjustment", "sale_accept"],
+      store_status: ["active", "suspended"],
     },
   },
 } as const
