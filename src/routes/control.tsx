@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
 import { getPlatformAdminSelf } from "@/lib/authz.functions";
 
 /**
@@ -16,13 +17,24 @@ export const Route = createFileRoute("/control")({
   beforeLoad: async ({ location }) => {
     if (location.pathname === "/control/login") return {};
 
-    const admin = await getPlatformAdminSelf().catch(() => "UNAUTHENTICATED" as const);
+    // 1) Sem sessão → redirect limpo, SEM invocar server fn (evita o throw
+    //    cru do requireSupabaseAuth virar RUNTIME_ERROR na overlay).
+    const { data: sess } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
+    if (!sess?.session) {
+      throw redirect({ to: "/control/login" });
+    }
 
-    if (admin === "UNAUTHENTICATED") {
+    // 2) Com sessão: chama a server fn. Se o token estiver inválido/expirado,
+    //    trata como sessão perdida e redireciona. Se retornar null, é
+    //    autenticado-mas-não-admin → errorComponent explícito.
+    let admin: Awaited<ReturnType<typeof getPlatformAdminSelf>> | "INVALID_SESSION";
+    try {
+      admin = await getPlatformAdminSelf();
+    } catch {
+      await supabase.auth.signOut().catch(() => {});
       throw redirect({ to: "/control/login" });
     }
     if (admin === null) {
-      // Autenticado, mas não é admin ativo (ou profile suspenso). Fail-closed.
       throw new Error("UNAUTHORIZED_CONTROL");
     }
     return { admin };
