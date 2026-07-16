@@ -33,6 +33,7 @@ import {
   Trash2,
   Users,
 } from "lucide-react";
+import { useCapabilities } from "@/hooks/use-capabilities";
 
 export const Route = createFileRoute("/_authenticated/admin/clientes")({
   component: ClientsPage,
@@ -60,6 +61,8 @@ type FilterKey = "all" | "recent" | "top";
 type SortKey = "recent" | "name";
 
 function ClientsPage() {
+  const { can } = useCapabilities();
+  const canUpdate = can("customers.update_notes");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<FilterKey>("all");
   const [sort, setSort] = useState<SortKey>("recent");
@@ -126,9 +129,11 @@ function ClientsPage() {
             Gerencie contatos, compras e atendimentos pelo WhatsApp.
           </p>
         </div>
-        <Button onClick={() => { setEditing(null); setFormOpen(true); }}>
-          <Plus className="mr-2 h-4 w-4" /> Novo cliente
-        </Button>
+        {canUpdate && (
+          <Button onClick={() => { setEditing(null); setFormOpen(true); }}>
+            <Plus className="mr-2 h-4 w-4" /> Novo cliente
+          </Button>
+        )}
       </div>
 
       <div className="grid gap-6 md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.4fr)] md:items-stretch">
@@ -179,9 +184,11 @@ function ClientsPage() {
                     podem ser cadastrados manualmente.
                   </p>
                 </div>
-                <Button size="sm" onClick={() => { setEditing(null); setFormOpen(true); }}>
-                  <Plus className="mr-2 h-4 w-4" /> Cadastrar cliente
-                </Button>
+                {canUpdate && (
+                  <Button size="sm" onClick={() => { setEditing(null); setFormOpen(true); }}>
+                    <Plus className="mr-2 h-4 w-4" /> Cadastrar cliente
+                  </Button>
+                )}
               </div>
             ) : filtered.length === 0 ? (
               <p className="py-8 text-center text-sm text-muted-foreground">
@@ -220,6 +227,7 @@ function ClientsPage() {
               id={selected}
               onEdit={(c) => { setEditing(c); setFormOpen(true); }}
               onDeleted={() => setSelected(null)}
+              canUpdate={canUpdate}
             />
           ) : (
             <CardContent className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
@@ -241,6 +249,7 @@ function ClientsPage() {
         open={formOpen}
         onOpenChange={setFormOpen}
         customer={editing}
+        canUpdate={canUpdate}
       />
     </div>
   );
@@ -250,10 +259,12 @@ function CustomerDetail({
   id,
   onEdit,
   onDeleted,
+  canUpdate,
 }: {
   id: string;
   onEdit: (c: Customer) => void;
   onDeleted: () => void;
+  canUpdate: boolean;
 }) {
   const qc = useQueryClient();
   const { data: customer } = useQuery({
@@ -352,9 +363,11 @@ function CustomerDetail({
               <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp
             </a>
           </Button>
-          <Button size="sm" variant="outline" onClick={() => onEdit(customer)}>
-            <Pencil className="mr-2 h-4 w-4" /> Editar
-          </Button>
+          {canUpdate && (
+            <Button size="sm" variant="outline" onClick={() => onEdit(customer)}>
+              <Pencil className="mr-2 h-4 w-4" /> Editar
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent className="flex-1 space-y-4 overflow-auto">
@@ -420,13 +433,14 @@ function CustomerDetail({
           <Textarea
             defaultValue={customer.internal_notes ?? ""}
             rows={3}
+            readOnly={!canUpdate}
             onBlur={(e) =>
-              e.target.value !== (customer.internal_notes ?? "") && saveNotes.mutate(e.target.value)
+              canUpdate && e.target.value !== (customer.internal_notes ?? "") && saveNotes.mutate(e.target.value)
             }
           />
         </div>
 
-        <div className="flex justify-end">
+        {canUpdate && <div className="flex justify-end">
           <Button
             variant="ghost"
             size="sm"
@@ -435,7 +449,7 @@ function CustomerDetail({
           >
             <Trash2 className="mr-2 h-4 w-4" /> Remover cliente
           </Button>
-        </div>
+        </div>}
       </CardContent>
     </>
   );
@@ -454,10 +468,12 @@ function CustomerFormDialog({
   open,
   onOpenChange,
   customer,
+  canUpdate,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   customer: Customer | null;
+  canUpdate: boolean;
 }) {
   const qc = useQueryClient();
   const [name, setName] = useState("");
@@ -479,6 +495,7 @@ function CustomerFormDialog({
   const save = useMutation({
     mutationFn: async () => {
       if (!name.trim() || !phone.trim()) throw new Error("Nome e telefone são obrigatórios");
+      if (!canUpdate) throw new Error("Sem permissão para alterar clientes");
       if (customer) {
         const { error } = await supabase
           .from("customers")

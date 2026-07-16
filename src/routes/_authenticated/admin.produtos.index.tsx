@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Upload, X } from "lucide-react";
 import { toast } from "sonner";
+import { useCapabilities } from "@/hooks/use-capabilities";
 
 export const Route = createFileRoute("/_authenticated/admin/produtos/")({
   component: ProductsPage,
@@ -36,6 +37,8 @@ type ProductRow = {
 function ProductsPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const { can } = useCapabilities();
+  const canCreate = can("products.create");
   const [search, setSearch] = useState("");
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
@@ -147,10 +150,10 @@ function ProductsPage() {
             Estoque total = soma das variações. Produto sem variação com estoque não vai à vitrine.
           </p>
         </div>
-        {!creating && <Button onClick={() => setCreating(true)}>Novo produto</Button>}
+        {!creating && canCreate && <Button onClick={() => setCreating(true)}>Novo produto</Button>}
       </div>
 
-      {creating && (
+      {creating && canCreate && (
         <Card>
           <CardHeader>
             <CardTitle>Novo produto</CardTitle>

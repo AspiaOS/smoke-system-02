@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { formatBRL, margin } from "@/lib/money";
 import { toast } from "sonner";
+import { useCapabilities } from "@/hooks/use-capabilities";
 
 export const Route = createFileRoute("/_authenticated/admin/produtos/$id")({
   component: ProductDetail,
@@ -56,6 +57,8 @@ function ProductDetail() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
+  const { can } = useCapabilities();
+  const canUpdate = can("products.update");
 
   const { data: product, isLoading } = useQuery({
     queryKey: ["product", id],
@@ -190,17 +193,19 @@ function ProductDetail() {
         <Link to="/admin/produtos" className="text-sm text-muted-foreground hover:text-foreground">
           ← Voltar
         </Link>
-        <Button
-          variant="destructive"
-          size="sm"
-          onClick={() => {
-            if (confirm("Remover produto? Isso apaga variações. Movimentações históricas impedem se houver.")) {
-              deleteProduct.mutate();
-            }
-          }}
-        >
-          Remover
-        </Button>
+        {canUpdate && (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => {
+              if (confirm("Remover produto? Isso apaga variações. Movimentações históricas impedem se houver.")) {
+                deleteProduct.mutate();
+              }
+            }}
+          >
+            Remover
+          </Button>
+        )}
       </div>
 
       <Card>
@@ -210,6 +215,7 @@ function ProductDetail() {
             <Label>Nome</Label>
             <Input
               defaultValue={product.name}
+              readOnly={!canUpdate}
               onBlur={(e) => e.target.value !== product.name && patchProduct.mutate({ name: e.target.value })}
             />
           </div>
@@ -217,6 +223,7 @@ function ProductDetail() {
             <Label>Marca</Label>
             <Input
               defaultValue={product.brand ?? ""}
+              readOnly={!canUpdate}
               onBlur={(e) => patchProduct.mutate({ brand: e.target.value || null })}
             />
           </div>
@@ -224,6 +231,7 @@ function ProductDetail() {
             <Label>Descrição</Label>
             <Textarea
               defaultValue={product.description ?? ""}
+              readOnly={!canUpdate}
               onBlur={(e) => patchProduct.mutate({ description: e.target.value || null })}
               rows={3}
             />
@@ -233,6 +241,7 @@ function ProductDetail() {
             <Select
               value={product.category_id}
               onValueChange={(v) => patchProduct.mutate({ category_id: v })}
+              disabled={!canUpdate}
             >
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -247,6 +256,7 @@ function ProductDetail() {
               <Switch
                 checked={product.visible}
                 onCheckedChange={(v) => patchProduct.mutate({ visible: v })}
+                disabled={!canUpdate}
               />
               <span className="text-sm">Visível</span>
             </div>
@@ -254,6 +264,7 @@ function ProductDetail() {
               <Switch
                 checked={product.active}
                 onCheckedChange={(v) => patchProduct.mutate({ active: v })}
+                disabled={!canUpdate}
               />
               <span className="text-sm">Ativo</span>
             </div>
@@ -261,6 +272,7 @@ function ProductDetail() {
               <Switch
                 checked={product.featured}
                 onCheckedChange={(v) => patchProduct.mutate({ featured: v })}
+                disabled={!canUpdate}
               />
               <span className="text-sm">Destaque</span>
             </div>
@@ -275,13 +287,15 @@ function ProductDetail() {
             {product.images.map((url) => (
               <div key={url} className="group relative">
                 <img src={url} alt="" className="h-24 w-24 rounded object-cover" />
-                <button
-                  type="button"
-                  onClick={() => removeImage.mutate(url)}
-                  className="absolute -right-1 -top-1 rounded-full bg-destructive px-1.5 text-xs text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
-                >
-                  ×
-                </button>
+                {canUpdate && (
+                  <button
+                    type="button"
+                    onClick={() => removeImage.mutate(url)}
+                    className="absolute -right-1 -top-1 rounded-full bg-destructive px-1.5 text-xs text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                  >
+                    ×
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -296,16 +310,18 @@ function ProductDetail() {
               e.target.value = "";
             }}
           />
-          <Button size="sm" onClick={() => fileRef.current?.click()} disabled={uploadImage.isPending}>
-            {uploadImage.isPending ? "Enviando…" : "Adicionar foto"}
-          </Button>
+          {canUpdate && (
+            <Button size="sm" onClick={() => fileRef.current?.click()} disabled={uploadImage.isPending}>
+              {uploadImage.isPending ? "Enviando…" : "Adicionar foto"}
+            </Button>
+          )}
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader className="flex-row items-center justify-between">
           <CardTitle>Variações</CardTitle>
-          <Button size="sm" onClick={() => addVariation.mutate()}>Adicionar variação</Button>
+          {canUpdate && <Button size="sm" onClick={() => addVariation.mutate()}>Adicionar variação</Button>}
         </CardHeader>
         <CardContent>
           {product.variations.length === 0 && (
@@ -317,7 +333,7 @@ function ProductDetail() {
             {product.variations.map((v) => (
               <VariationRow key={v.id} variation={v} onPatch={(patch) =>
                 patchVariation.mutate({ id: v.id, oldPrice: v.price, oldCost: v.cost, ...patch })
-              } />
+              } canUpdate={canUpdate} />
             ))}
           </div>
         </CardContent>
@@ -334,9 +350,11 @@ function ProductDetail() {
 function VariationRow({
   variation,
   onPatch,
+  canUpdate,
 }: {
   variation: Variation;
   onPatch: (patch: Partial<Variation>) => void;
+  canUpdate: boolean;
 }) {
   const m = margin(variation.price, variation.cost);
   return (
@@ -345,6 +363,7 @@ function VariationRow({
         <Label className="text-xs">Nome</Label>
         <Input
           defaultValue={variation.name}
+          readOnly={!canUpdate}
           onBlur={(e) => e.target.value !== variation.name && onPatch({ name: e.target.value })}
         />
       </div>
@@ -354,6 +373,7 @@ function VariationRow({
           type="number"
           step="0.01"
           defaultValue={variation.price}
+          readOnly={!canUpdate}
           onBlur={(e) => {
             const n = Number(e.target.value);
             if (Number.isFinite(n) && n !== variation.price) onPatch({ price: n });
@@ -366,6 +386,7 @@ function VariationRow({
           type="number"
           step="0.01"
           defaultValue={variation.cost}
+          readOnly={!canUpdate}
           onBlur={(e) => {
             const n = Number(e.target.value);
             if (Number.isFinite(n) && n !== variation.cost) onPatch({ cost: n });
@@ -377,6 +398,7 @@ function VariationRow({
         <Input
           type="number"
           defaultValue={variation.min_stock}
+          readOnly={!canUpdate}
           onBlur={(e) => {
             const n = Number(e.target.value) || 0;
             if (n !== variation.min_stock) onPatch({ min_stock: n });
@@ -394,6 +416,7 @@ function VariationRow({
           <Switch
             checked={variation.active}
             onCheckedChange={(v) => onPatch({ active: v })}
+            disabled={!canUpdate}
           />
         </div>
       </div>

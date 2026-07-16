@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/table";
 import { formatBRL, numericToCents } from "@/lib/money";
 import { Search, Receipt } from "lucide-react";
+import { useCapabilities } from "@/hooks/use-capabilities";
 
 export const Route = createFileRoute("/_authenticated/admin/vendas")({
   component: SalesPage,
@@ -75,6 +76,9 @@ const PAYMENT_LABEL: Record<string, string> = {
 };
 
 function SalesPage() {
+  const { can } = useCapabilities();
+  const canViewCost = can("sales.view_cost");
+  const canViewProfit = can("sales.view_profit");
   const [period, setPeriod] = useState<PeriodKey>("30d");
   const [payment, setPayment] = useState<PaymentKey>("all");
   const [sort, setSort] = useState<SortKey>("recent");
@@ -119,18 +123,18 @@ function SalesPage() {
       );
     }
     if (sort === "total") list = [...list].sort((a, b) => Number(b.total) - Number(a.total));
-    else if (sort === "profit")
+    else if (sort === "profit" && canViewProfit)
       list = [...list].sort((a, b) => Number(b.gross_profit) - Number(a.gross_profit));
     else list = [...list].sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
     return list;
-  }, [sales, period, payment, sort, query]);
+  }, [sales, period, payment, sort, query, canViewProfit]);
 
   const totals = useMemo(() => {
     const t = filtered.reduce(
       (acc, s) => {
         acc.revenue += numericToCents(s.total);
-        acc.cost += numericToCents(s.total_cost);
-        acc.profit += numericToCents(s.gross_profit);
+        if (canViewCost) acc.cost += numericToCents(s.total_cost);
+        if (canViewProfit) acc.profit += numericToCents(s.gross_profit);
         return acc;
       },
       { revenue: 0, cost: 0, profit: 0 },
@@ -139,7 +143,7 @@ function SalesPage() {
     const avg = count > 0 ? t.revenue / count : 0;
     const margin = t.revenue > 0 ? (t.profit / t.revenue) * 100 : 0;
     return { ...t, count, avg, margin };
-  }, [filtered]);
+  }, [filtered, canViewCost, canViewProfit]);
 
   return (
     <div className="space-y-6">
@@ -184,22 +188,24 @@ function SalesPage() {
           <SelectContent>
             <SelectItem value="recent">Mais recentes</SelectItem>
             <SelectItem value="total">Maior valor</SelectItem>
-            <SelectItem value="profit">Maior lucro</SelectItem>
+            {canViewProfit && <SelectItem value="profit">Maior lucro</SelectItem>}
           </SelectContent>
         </Select>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <SummaryCard label="Receita" value={formatBRL(totals.revenue / 100)} />
-        <SummaryCard label="Custo" value={formatBRL(totals.cost / 100)} />
-        <SummaryCard
-          label="Lucro bruto"
-          value={formatBRL(totals.profit / 100)}
-          highlight
-        />
+        {canViewCost && <SummaryCard label="Custo" value={formatBRL(totals.cost / 100)} />}
+        {canViewProfit && (
+          <SummaryCard
+            label="Lucro bruto"
+            value={formatBRL(totals.profit / 100)}
+            highlight
+          />
+        )}
         <SummaryCard label="Vendas" value={String(totals.count)} />
         <SummaryCard label="Ticket médio" value={formatBRL(totals.avg / 100)} />
-        <SummaryCard label="Margem média" value={`${totals.margin.toFixed(1)}%`} />
+        {canViewProfit && <SummaryCard label="Margem média" value={`${totals.margin.toFixed(1)}%`} />}
       </div>
 
       <Card>
@@ -229,8 +235,8 @@ function SalesPage() {
                     <TableHead>Cliente</TableHead>
                     <TableHead>Pagamento</TableHead>
                     <TableHead className="text-right">Total</TableHead>
-                    <TableHead className="text-right">Custo</TableHead>
-                    <TableHead className="text-right">Lucro</TableHead>
+                    {canViewCost && <TableHead className="text-right">Custo</TableHead>}
+                    {canViewProfit && <TableHead className="text-right">Lucro</TableHead>}
                     <TableHead>Data</TableHead>
                     <TableHead />
                   </TableRow>
@@ -246,8 +252,8 @@ function SalesPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right tabular-nums font-medium">{formatBRL(s.total)}</TableCell>
-                      <TableCell className="text-right tabular-nums text-muted-foreground">{formatBRL(s.total_cost)}</TableCell>
-                      <TableCell className="text-right tabular-nums text-primary">{formatBRL(s.gross_profit)}</TableCell>
+                      {canViewCost && <TableCell className="text-right tabular-nums text-muted-foreground">{formatBRL(s.total_cost)}</TableCell>}
+                      {canViewProfit && <TableCell className="text-right tabular-nums text-primary">{formatBRL(s.gross_profit)}</TableCell>}
                       <TableCell className="text-xs text-muted-foreground">
                         {new Date(s.created_at).toLocaleString("pt-BR")}
                       </TableCell>
@@ -268,6 +274,8 @@ function SalesPage() {
       <SaleDetailSheet
         sale={filtered.find((s) => s.id === openId) ?? null}
         onClose={() => setOpenId(null)}
+        canViewCost={canViewCost}
+        canViewProfit={canViewProfit}
       />
     </div>
   );
@@ -297,7 +305,7 @@ function SummaryCard({
   );
 }
 
-function SaleDetailSheet({ sale, onClose }: { sale: SaleRow | null; onClose: () => void }) {
+function SaleDetailSheet({ sale, onClose, canViewCost, canViewProfit }: { sale: SaleRow | null; onClose: () => void; canViewCost: boolean; canViewProfit: boolean }) {
   const { data: items = [] } = useQuery({
     queryKey: ["sale-items", sale?.order_id],
     enabled: !!sale?.order_id,
@@ -365,8 +373,8 @@ function SaleDetailSheet({ sale, onClose }: { sale: SaleRow | null; onClose: () 
                 <Line label="Total" value={formatBRL(sale.total)} strong />
                 <Line label="Pagamento" value={PAYMENT_LABEL[sale.payment_method] ?? sale.payment_method} />
                 <div className="my-2 border-t" />
-                <Line label="Custo total" value={formatBRL(sale.total_cost)} muted />
-                <Line label="Lucro bruto" value={formatBRL(sale.gross_profit)} highlight />
+                {canViewCost && <Line label="Custo total" value={formatBRL(sale.total_cost)} muted />}
+                {canViewProfit && <Line label="Lucro bruto" value={formatBRL(sale.gross_profit)} highlight />}
               </section>
             </div>
           </>
