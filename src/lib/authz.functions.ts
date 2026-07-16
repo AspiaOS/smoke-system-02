@@ -23,7 +23,10 @@ export const getPlatformAdminSelf = createServerFn({ method: "GET" })
       .maybeSingle(),
     ]);
     if (adminRes.error || !adminRes.data || !adminRes.data.active) return null;
-    if (profileRes.error || !profileRes.data || profileRes.data.status !== "active") return null;
+    if (profileRes.error) return null;
+    // Profile ausente é aceito (admins globais podem não ter profile de loja);
+    // profile suspenso/arquivado barra o acesso.
+    if (profileRes.data && profileRes.data.status !== "active") return null;
     return {
       userId: adminRes.data.user_id,
       role: adminRes.data.role as PlatformRole,
