@@ -1051,6 +1051,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_store_capability: {
+        Args: { _capability: string; _store_id: string; _user_id: string }
+        Returns: boolean
+      }
       has_store_membership: {
         Args: { _store_id: string; _user_id: string }
         Returns: boolean
