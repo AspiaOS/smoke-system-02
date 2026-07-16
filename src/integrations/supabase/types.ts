@@ -606,8 +606,6 @@ export type Database = {
       store_settings: {
         Row: {
           banners: Json
-          business_hours: string | null
-          pix_key: string | null
           store_display_name: string
           store_id: string
           updated_at: string
@@ -615,8 +613,6 @@ export type Database = {
         }
         Insert: {
           banners?: Json
-          business_hours?: string | null
-          pix_key?: string | null
           store_display_name: string
           store_id: string
           updated_at?: string
@@ -624,8 +620,6 @@ export type Database = {
         }
         Update: {
           banners?: Json
-          business_hours?: string | null
-          pix_key?: string | null
           store_display_name?: string
           store_id?: string
           updated_at?: string
@@ -768,21 +762,18 @@ export type Database = {
       public_store_settings: {
         Row: {
           banners: Json | null
-          business_hours: string | null
           store_display_name: string | null
           store_id: string | null
           whatsapp_number: string | null
         }
         Insert: {
           banners?: Json | null
-          business_hours?: string | null
           store_display_name?: string | null
           store_id?: string | null
           whatsapp_number?: string | null
         }
         Update: {
           banners?: Json | null
-          business_hours?: string | null
           store_display_name?: string | null
           store_id?: string | null
           whatsapp_number?: string | null
