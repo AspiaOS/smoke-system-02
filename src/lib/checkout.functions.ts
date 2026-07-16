@@ -89,5 +89,10 @@ export const createPublicOrder = createServerFn({ method: "POST" })
       delivery_fee: String(row.delivery_fee),
       total: String(row.total),
       whatsapp_number: String(row.whatsapp_number ?? ""),
+      customer_name: String(row.customer_name ?? ""),
+      customer_phone: String(row.customer_phone ?? ""),
+      address: String(row.address ?? ""),
+      neighborhood_name: String(row.neighborhood_name ?? ""),
+      payment_method: String(row.payment_method ?? ""),
     };
   });
