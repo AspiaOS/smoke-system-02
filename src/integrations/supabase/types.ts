@@ -828,6 +828,18 @@ export type Database = {
       }
       current_store_id: { Args: never; Returns: string }
       expire_pending_orders: { Args: { _older_than?: string }; Returns: number }
+      get_audit_activity: {
+        Args: {
+          p_from: string
+          p_source: string
+          p_timezone?: string
+          p_to: string
+        }
+        Returns: {
+          activity_count: number
+          activity_date: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
