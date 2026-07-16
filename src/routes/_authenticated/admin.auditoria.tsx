@@ -4,6 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/admin/PageHeader";
 
 export const Route = createFileRoute("/_authenticated/admin/auditoria")({
   component: AuditPage,
@@ -64,10 +65,7 @@ function AuditPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Auditoria</h1>
-        <p className="text-sm text-muted-foreground">Últimos 200 eventos do sistema.</p>
-      </div>
+      <PageHeader title="Auditoria" description="Últimos 200 eventos do sistema." />
 
       <div className="flex gap-2">
         {(["audit", "stock"] as const).map((t) => (
