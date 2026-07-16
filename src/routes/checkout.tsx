@@ -1,8 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, Minus, Plus, Trash2, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { createPublicOrder } from "@/lib/checkout.functions";
 import { formatBRL } from "@/lib/money";
 import { normalizePhoneBR } from "@/lib/phone";
 import { useCart } from "@/hooks/use-cart";
@@ -25,6 +27,8 @@ const PAYMENTS: { value: PaymentMethod; label: string }[] = [
 function Checkout() {
   const navigate = useNavigate();
   const { items, setQty, remove, clear, subtotalCents } = useCart();
+  const submitOrder = useServerFn(createPublicOrder);
+  const honeypotRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -58,24 +62,18 @@ function Checkout() {
       if (!neighborhoodId) throw new Error("Escolha o bairro");
       if (items.length === 0) throw new Error("Carrinho vazio");
 
-      const { data, error } = await supabase.rpc("create_public_order", {
-        p_customer_name: name.trim(),
-        p_customer_phone: normalized,
-        p_address: address.trim(),
-        p_neighborhood_id: neighborhoodId,
-        p_payment_method: payment,
-        p_items: items.map((i) => ({ variation_id: i.variationId, quantity: i.quantity })),
+      const row = await submitOrder({
+        data: {
+          customer_name: name.trim(),
+          customer_phone: normalized,
+          address: address.trim(),
+          neighborhood_id: neighborhoodId,
+          payment_method: payment,
+          items: items.map((i) => ({ variation_id: i.variationId, quantity: i.quantity })),
+          hp: honeypotRef.current?.value ?? "",
+        },
       });
-      if (error) throw error;
-      const row = Array.isArray(data) ? data[0] : data;
-      if (!row) throw new Error("Falha ao criar pedido");
-      return {
-        order_id: String(row.order_id),
-        subtotal: String(row.subtotal),
-        delivery_fee: String(row.delivery_fee),
-        total: String(row.total),
-        whatsapp_number: String(row.whatsapp_number ?? ""),
-      };
+      return row;
     },
     onSuccess: (row) => {
       const msg = buildWhatsAppMessage({
@@ -115,6 +113,16 @@ function Checkout() {
       </header>
 
       <main className="mx-auto max-w-3xl space-y-8 px-5 pb-32">
+        {/* Honeypot: invisível para humanos, atrai bots */}
+        <input
+          ref={honeypotRef}
+          type="text"
+          name="company_website"
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          className="absolute left-[-9999px] top-[-9999px] h-0 w-0 opacity-0"
+        />
         <section>
           <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
             Seu carrinho
