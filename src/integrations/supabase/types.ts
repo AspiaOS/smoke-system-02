@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_allowlist: {
+        Row: {
+          created_at: string
+          email: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
