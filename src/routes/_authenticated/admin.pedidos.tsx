@@ -25,6 +25,7 @@ import {
 import { formatBRL } from "@/lib/money";
 import { toast } from "sonner";
 import { Package, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
+import { useCapabilities } from "@/hooks/use-capabilities";
 
 export const Route = createFileRoute("/_authenticated/admin/pedidos")({
   component: OrdersPage,
@@ -69,6 +70,10 @@ type DateFilter = "all" | "today" | "7d" | "30d";
 type SortKey = "recent" | "highest" | "lowest";
 
 function OrdersPage() {
+  const { can } = useCapabilities();
+  const canCreate = can("orders.create");
+  const canAccept = can("orders.accept");
+  const canCancel = can("orders.cancel");
   const [tab, setTab] = useState<OrderStatus>("pending");
   const [cancelling, setCancelling] = useState<string | null>(null);
   const [reason, setReason] = useState("");
@@ -168,10 +173,12 @@ function OrdersPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={() => setNewOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Novo pedido
-          </Button>
+          {canCreate && (
+            <Button onClick={() => setNewOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo pedido
+            </Button>
+          )}
           <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
             <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
             Atualizar
@@ -239,7 +246,7 @@ function OrdersPage() {
       {isLoading && <p className="text-sm text-muted-foreground">Carregando…</p>}
 
       {!isLoading && filtered.length === 0 && (
-        <EmptyState tab={tab} onCreate={() => setNewOpen(true)} />
+        <EmptyState tab={tab} onCreate={() => setNewOpen(true)} canCreate={canCreate} />
       )}
 
       <div className="space-y-3">
@@ -250,6 +257,8 @@ function OrdersPage() {
             onAccept={() => acceptMut.mutate(o.id)}
             onCancel={() => setCancelling(o.id)}
             busy={acceptMut.isPending}
+            canAccept={canAccept}
+            canCancel={canCancel}
           />
         ))}
       </div>
@@ -277,12 +286,12 @@ function OrdersPage() {
         </DialogContent>
       </Dialog>
 
-      <NewOrderDialog open={newOpen} onOpenChange={setNewOpen} />
+      {canCreate && <NewOrderDialog open={newOpen} onOpenChange={setNewOpen} />}
     </div>
   );
 }
 
-function EmptyState({ tab, onCreate }: { tab: OrderStatus; onCreate: () => void }) {
+function EmptyState({ tab, onCreate, canCreate }: { tab: OrderStatus; onCreate: () => void; canCreate: boolean }) {
   const copy =
     tab === "pending"
       ? {
@@ -309,10 +318,12 @@ function EmptyState({ tab, onCreate }: { tab: OrderStatus; onCreate: () => void 
           <h3 className="text-base font-semibold">{copy.title}</h3>
           <p className="max-w-sm text-sm text-muted-foreground">{copy.desc}</p>
         </div>
-        <Button variant="outline" onClick={onCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          Criar pedido manual
-        </Button>
+        {canCreate && (
+          <Button variant="outline" onClick={onCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            Criar pedido manual
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
@@ -323,11 +334,15 @@ function OrderCard({
   onAccept,
   onCancel,
   busy,
+  canAccept,
+  canCancel,
 }: {
   order: Order;
   onAccept: () => void;
   onCancel: () => void;
   busy: boolean;
+  canAccept: boolean;
+  canCancel: boolean;
 }) {
   const created = new Date(order.created_at).toLocaleString("pt-BR");
   const shortId = order.id.slice(0, 8).toUpperCase();
@@ -366,10 +381,10 @@ function OrderCard({
           ))}
         </ul>
 
-        {order.status === "pending" && (
+        {order.status === "pending" && (canAccept || canCancel) && (
           <div className="flex flex-wrap gap-2">
-            <Button onClick={onAccept} disabled={busy}>Aceitar</Button>
-            <Button variant="outline" onClick={onCancel}>Recusar</Button>
+            {canAccept && <Button onClick={onAccept} disabled={busy}>Aceitar</Button>}
+            {canCancel && <Button variant="outline" onClick={onCancel}>Recusar</Button>}
           </div>
         )}
         {order.status === "cancelled" && order.cancel_reason && (
