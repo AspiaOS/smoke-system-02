@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { platformRoleHasCapability } from "@/lib/authz/matrix";
 
-export const Route = createFileRoute("/control/contas/nova")({
+export const Route = createFileRoute("/control/contas_/nova")({
   ssr: false,
   beforeLoad: async () => {
     const { data } = await supabase.auth.getSession();

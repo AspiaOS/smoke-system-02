@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { platformRoleHasCapability } from "@/lib/authz/matrix";
 
-export const Route = createFileRoute("/control/lojas/nova")({
+export const Route = createFileRoute("/control/lojas_/nova")({
   ssr: false,
   beforeLoad: async () => {
     const { data } = await supabase.auth.getSession();
