@@ -209,7 +209,6 @@ export function MagicBentoCard({
 export type MagicBentoProps = {
   children: React.ReactNode;
   className?: string;
-  as?: keyof React.JSX.IntrinsicElements;
   textAutoHide?: boolean;
   enableStars?: boolean;
   enableSpotlight?: boolean;
@@ -227,7 +226,6 @@ export type MagicBentoProps = {
 export function MagicBento({
   children,
   className,
-  as: As = "div",
   enableStars = true,
   enableSpotlight = true,
   enableBorderGlow = true,
