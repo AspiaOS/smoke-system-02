@@ -525,7 +525,7 @@ export type AccountDetail = {
     id: string;
     action: string;
     created_at: string;
-    payload: unknown;
+    payload_json: string | null;
   }>;
 };
 
@@ -592,7 +592,7 @@ export const getAccountDetail = createServerFn({ method: "GET" })
         id: e.id,
         action: e.action,
         created_at: e.created_at,
-        payload: e.payload ?? null,
+        payload_json: e.payload ? JSON.stringify(e.payload) : null,
       })),
     };
   });
