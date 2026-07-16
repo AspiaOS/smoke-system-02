@@ -42,6 +42,7 @@ import {
 import { formatBRL, numericToCents, centsToNumeric } from "@/lib/money";
 import { toast } from "sonner";
 import { Pencil, Plus, Receipt, Search, Trash2 } from "lucide-react";
+import { useCapabilities } from "@/hooks/use-capabilities";
 
 export const Route = createFileRoute("/_authenticated/admin/despesas")({
   component: ExpensesPage,
@@ -93,6 +94,10 @@ function periodRange(key: PeriodKey): { from: string; to: string } {
 
 function ExpensesPage() {
   const qc = useQueryClient();
+  const { can } = useCapabilities();
+  const canCreate = can("expenses.create");
+  const canUpdate = can("expenses.update");
+  const canDelete = can("expenses.delete");
   const [period, setPeriod] = useState<PeriodKey>("30d");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [sort, setSort] = useState<SortKey>("recent");
@@ -175,9 +180,11 @@ function ExpensesPage() {
             Registre os gastos e acompanhe o resultado real da loja.
           </p>
         </div>
-        <Button onClick={() => { setEditing(null); setFormOpen(true); }}>
-          <Plus className="mr-2 h-4 w-4" /> Nova despesa
-        </Button>
+        {canCreate && (
+          <Button onClick={() => { setEditing(null); setFormOpen(true); }}>
+            <Plus className="mr-2 h-4 w-4" /> Nova despesa
+          </Button>
+        )}
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
@@ -249,9 +256,11 @@ function ExpensesPage() {
                   Os gastos adicionados aparecerão aqui e serão considerados no resultado da loja.
                 </p>
               </div>
-              <Button size="sm" onClick={() => { setEditing(null); setFormOpen(true); }}>
-                <Plus className="mr-2 h-4 w-4" /> Adicionar primeira despesa
-              </Button>
+              {canCreate && (
+                <Button size="sm" onClick={() => { setEditing(null); setFormOpen(true); }}>
+                  <Plus className="mr-2 h-4 w-4" /> Adicionar primeira despesa
+                </Button>
+              )}
             </div>
           ) : (
             <>
@@ -263,7 +272,7 @@ function ExpensesPage() {
                       <TableHead>Descrição</TableHead>
                       <TableHead>Categoria</TableHead>
                       <TableHead className="text-right">Valor</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
+                      {(canUpdate || canDelete) && <TableHead className="text-right">Ações</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -277,21 +286,25 @@ function ExpensesPage() {
                         <TableCell className="text-right tabular-nums text-destructive">
                           - {formatBRL(e.amount)}
                         </TableCell>
-                        <TableCell className="text-right">
+                        {(canUpdate || canDelete) && <TableCell className="text-right">
                           <div className="flex justify-end gap-1">
-                            <Button size="icon" variant="ghost" onClick={() => { setEditing(e); setFormOpen(true); }}>
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => setDeleting(e)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            {canUpdate && (
+                              <Button size="icon" variant="ghost" onClick={() => { setEditing(e); setFormOpen(true); }}>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {canDelete && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => setDeleting(e)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
-                        </TableCell>
+                        </TableCell>}
                       </TableRow>
                     ))}
                   </TableBody>
@@ -314,6 +327,8 @@ function ExpensesPage() {
         open={formOpen}
         onOpenChange={setFormOpen}
         expense={editing}
+        canCreate={canCreate}
+        canUpdate={canUpdate}
       />
 
       <AlertDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
@@ -366,10 +381,14 @@ function ExpenseFormDialog({
   open,
   onOpenChange,
   expense,
+  canCreate,
+  canUpdate,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   expense: Expense | null;
+  canCreate: boolean;
+  canUpdate: boolean;
 }) {
   const qc = useQueryClient();
   const [description, setDescription] = useState("");
@@ -388,6 +407,8 @@ function ExpenseFormDialog({
 
   const save = useMutation({
     mutationFn: async () => {
+      if (expense && !canUpdate) throw new Error("Sem permissão para editar despesas");
+      if (!expense && !canCreate) throw new Error("Sem permissão para criar despesas");
       const cents = numericToCents(amount);
       if (!description.trim()) throw new Error("Descrição obrigatória");
       if (!category.trim()) throw new Error("Categoria obrigatória");

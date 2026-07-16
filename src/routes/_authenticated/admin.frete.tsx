@@ -44,6 +44,7 @@ import {
 import { formatBRL } from "@/lib/money";
 import { toast } from "sonner";
 import { MapPin } from "lucide-react";
+import { useCapabilities } from "@/hooks/use-capabilities";
 
 export const Route = createFileRoute("/_authenticated/admin/frete")({
   component: ShippingPage,
@@ -67,6 +68,8 @@ function parseFee(v: string): number {
 
 function ShippingPage() {
   const qc = useQueryClient();
+  const { can } = useCapabilities();
+  const canManage = can("shipping.manage");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [sort, setSort] = useState<SortKey>("name");
@@ -205,7 +208,7 @@ function ShippingPage() {
             Defina os bairros atendidos e o valor fixo de entrega.
           </p>
         </div>
-        <Button onClick={() => setCreating(true)}>+ Novo bairro</Button>
+        {canManage && <Button onClick={() => setCreating(true)}>+ Novo bairro</Button>}
       </div>
 
       <p className="rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
@@ -256,7 +259,7 @@ function ShippingPage() {
                 Adicione os bairros atendidos para liberar as opções de entrega no checkout.
               </p>
             </div>
-            <Button onClick={() => setCreating(true)}>+ Adicionar primeiro bairro</Button>
+            {canManage && <Button onClick={() => setCreating(true)}>+ Adicionar primeiro bairro</Button>}
           </CardContent>
         </Card>
       ) : filtered.length === 0 ? (
@@ -278,7 +281,7 @@ function ShippingPage() {
                   <TableHead>Bairro</TableHead>
                   <TableHead>Valor do frete</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  {canManage && <TableHead className="text-right">Ações</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -310,7 +313,7 @@ function ShippingPage() {
                           <Switch
                             checked={n.active}
                             onCheckedChange={(v) => toggleStatus(n, v)}
-                            disabled={isEditing}
+                            disabled={isEditing || !canManage}
                           />
                           {n.active ? (
                             <Badge variant="secondary">Ativo</Badge>
@@ -319,7 +322,7 @@ function ShippingPage() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-right">
+                      {canManage && <TableCell className="text-right">
                         {isEditing ? (
                           <div className="flex justify-end gap-2">
                             <Button size="sm" variant="ghost" onClick={cancelEdit}>
@@ -338,7 +341,7 @@ function ShippingPage() {
                             Editar
                           </Button>
                         )}
-                      </TableCell>
+                      </TableCell>}
                     </TableRow>
                   );
                 })}
