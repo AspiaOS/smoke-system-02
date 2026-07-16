@@ -46,7 +46,7 @@ function useStoreSettings() {
     queryKey: ["store_settings"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("store_settings")
+        .from("public_store_settings")
         .select("store_display_name")
         .limit(1)
         .maybeSingle();
