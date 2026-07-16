@@ -15,6 +15,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ControlIndexRouteImport } from './routes/control.index'
 import { Route as PIdRouteImport } from './routes/p.$id'
+import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as ControlLojasRouteImport } from './routes/control.lojas'
 import { Route as ControlLoginRouteImport } from './routes/control.login'
 import { Route as ControlContasRouteImport } from './routes/control.contas'
@@ -24,6 +25,7 @@ import { Route as AuthenticatedAdminVendasRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminPedidosRouteImport } from './routes/_authenticated/admin.pedidos'
 import { Route as AuthenticatedAdminFreteRouteImport } from './routes/_authenticated/admin.frete'
 import { Route as AuthenticatedAdminEstoqueRouteImport } from './routes/_authenticated/admin.estoque'
+import { Route as AuthenticatedAdminEquipeRouteImport } from './routes/_authenticated/admin.equipe'
 import { Route as AuthenticatedAdminDespesasRouteImport } from './routes/_authenticated/admin.despesas'
 import { Route as AuthenticatedAdminConfiguracoesRouteImport } from './routes/_authenticated/admin.configuracoes'
 import { Route as AuthenticatedAdminClientesRouteImport } from './routes/_authenticated/admin.clientes'
@@ -60,6 +62,11 @@ const ControlIndexRoute = ControlIndexRouteImport.update({
 const PIdRoute = PIdRouteImport.update({
   id: '/p/$id',
   path: '/p/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ControlLojasRoute = ControlLojasRouteImport.update({
@@ -108,6 +115,12 @@ const AuthenticatedAdminEstoqueRoute =
   AuthenticatedAdminEstoqueRouteImport.update({
     id: '/estoque',
     path: '/estoque',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminEquipeRoute =
+  AuthenticatedAdminEquipeRouteImport.update({
+    id: '/equipe',
+    path: '/equipe',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminDespesasRoute =
@@ -167,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/control/contas': typeof ControlContasRoute
   '/control/login': typeof ControlLoginRoute
   '/control/lojas': typeof ControlLojasRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/p/$id': typeof PIdRoute
   '/control/': typeof ControlIndexRoute
   '/admin/auditoria': typeof AuthenticatedAdminAuditoriaRoute
@@ -174,6 +188,7 @@ export interface FileRoutesByFullPath {
   '/admin/clientes': typeof AuthenticatedAdminClientesRoute
   '/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
   '/admin/despesas': typeof AuthenticatedAdminDespesasRoute
+  '/admin/equipe': typeof AuthenticatedAdminEquipeRoute
   '/admin/estoque': typeof AuthenticatedAdminEstoqueRoute
   '/admin/frete': typeof AuthenticatedAdminFreteRoute
   '/admin/pedidos': typeof AuthenticatedAdminPedidosRoute
@@ -190,6 +205,7 @@ export interface FileRoutesByTo {
   '/control/contas': typeof ControlContasRoute
   '/control/login': typeof ControlLoginRoute
   '/control/lojas': typeof ControlLojasRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/p/$id': typeof PIdRoute
   '/control': typeof ControlIndexRoute
   '/admin/auditoria': typeof AuthenticatedAdminAuditoriaRoute
@@ -197,6 +213,7 @@ export interface FileRoutesByTo {
   '/admin/clientes': typeof AuthenticatedAdminClientesRoute
   '/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
   '/admin/despesas': typeof AuthenticatedAdminDespesasRoute
+  '/admin/equipe': typeof AuthenticatedAdminEquipeRoute
   '/admin/estoque': typeof AuthenticatedAdminEstoqueRoute
   '/admin/frete': typeof AuthenticatedAdminFreteRoute
   '/admin/pedidos': typeof AuthenticatedAdminPedidosRoute
@@ -216,6 +233,7 @@ export interface FileRoutesById {
   '/control/contas': typeof ControlContasRoute
   '/control/login': typeof ControlLoginRoute
   '/control/lojas': typeof ControlLojasRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/p/$id': typeof PIdRoute
   '/control/': typeof ControlIndexRoute
   '/_authenticated/admin/auditoria': typeof AuthenticatedAdminAuditoriaRoute
@@ -223,6 +241,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/clientes': typeof AuthenticatedAdminClientesRoute
   '/_authenticated/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
   '/_authenticated/admin/despesas': typeof AuthenticatedAdminDespesasRoute
+  '/_authenticated/admin/equipe': typeof AuthenticatedAdminEquipeRoute
   '/_authenticated/admin/estoque': typeof AuthenticatedAdminEstoqueRoute
   '/_authenticated/admin/frete': typeof AuthenticatedAdminFreteRoute
   '/_authenticated/admin/pedidos': typeof AuthenticatedAdminPedidosRoute
@@ -242,6 +261,7 @@ export interface FileRouteTypes {
     | '/control/contas'
     | '/control/login'
     | '/control/lojas'
+    | '/invite/$token'
     | '/p/$id'
     | '/control/'
     | '/admin/auditoria'
@@ -249,6 +269,7 @@ export interface FileRouteTypes {
     | '/admin/clientes'
     | '/admin/configuracoes'
     | '/admin/despesas'
+    | '/admin/equipe'
     | '/admin/estoque'
     | '/admin/frete'
     | '/admin/pedidos'
@@ -265,6 +286,7 @@ export interface FileRouteTypes {
     | '/control/contas'
     | '/control/login'
     | '/control/lojas'
+    | '/invite/$token'
     | '/p/$id'
     | '/control'
     | '/admin/auditoria'
@@ -272,6 +294,7 @@ export interface FileRouteTypes {
     | '/admin/clientes'
     | '/admin/configuracoes'
     | '/admin/despesas'
+    | '/admin/equipe'
     | '/admin/estoque'
     | '/admin/frete'
     | '/admin/pedidos'
@@ -290,6 +313,7 @@ export interface FileRouteTypes {
     | '/control/contas'
     | '/control/login'
     | '/control/lojas'
+    | '/invite/$token'
     | '/p/$id'
     | '/control/'
     | '/_authenticated/admin/auditoria'
@@ -297,6 +321,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/clientes'
     | '/_authenticated/admin/configuracoes'
     | '/_authenticated/admin/despesas'
+    | '/_authenticated/admin/equipe'
     | '/_authenticated/admin/estoque'
     | '/_authenticated/admin/frete'
     | '/_authenticated/admin/pedidos'
@@ -315,6 +340,7 @@ export interface RootRouteChildren {
   ControlContasRoute: typeof ControlContasRoute
   ControlLoginRoute: typeof ControlLoginRoute
   ControlLojasRoute: typeof ControlLojasRoute
+  InviteTokenRoute: typeof InviteTokenRoute
   PIdRoute: typeof PIdRoute
   ControlIndexRoute: typeof ControlIndexRoute
   ApiPublicCronExpireOrdersRoute: typeof ApiPublicCronExpireOrdersRoute
@@ -362,6 +388,13 @@ declare module '@tanstack/react-router' {
       path: '/p/$id'
       fullPath: '/p/$id'
       preLoaderRoute: typeof PIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/control/lojas': {
@@ -425,6 +458,13 @@ declare module '@tanstack/react-router' {
       path: '/estoque'
       fullPath: '/admin/estoque'
       preLoaderRoute: typeof AuthenticatedAdminEstoqueRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/equipe': {
+      id: '/_authenticated/admin/equipe'
+      path: '/equipe'
+      fullPath: '/admin/equipe'
+      preLoaderRoute: typeof AuthenticatedAdminEquipeRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/despesas': {
@@ -492,6 +532,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminClientesRoute: typeof AuthenticatedAdminClientesRoute
   AuthenticatedAdminConfiguracoesRoute: typeof AuthenticatedAdminConfiguracoesRoute
   AuthenticatedAdminDespesasRoute: typeof AuthenticatedAdminDespesasRoute
+  AuthenticatedAdminEquipeRoute: typeof AuthenticatedAdminEquipeRoute
   AuthenticatedAdminEstoqueRoute: typeof AuthenticatedAdminEstoqueRoute
   AuthenticatedAdminFreteRoute: typeof AuthenticatedAdminFreteRoute
   AuthenticatedAdminPedidosRoute: typeof AuthenticatedAdminPedidosRoute
@@ -507,6 +548,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminClientesRoute: AuthenticatedAdminClientesRoute,
   AuthenticatedAdminConfiguracoesRoute: AuthenticatedAdminConfiguracoesRoute,
   AuthenticatedAdminDespesasRoute: AuthenticatedAdminDespesasRoute,
+  AuthenticatedAdminEquipeRoute: AuthenticatedAdminEquipeRoute,
   AuthenticatedAdminEstoqueRoute: AuthenticatedAdminEstoqueRoute,
   AuthenticatedAdminFreteRoute: AuthenticatedAdminFreteRoute,
   AuthenticatedAdminPedidosRoute: AuthenticatedAdminPedidosRoute,
@@ -538,6 +580,7 @@ const rootRouteChildren: RootRouteChildren = {
   ControlContasRoute: ControlContasRoute,
   ControlLoginRoute: ControlLoginRoute,
   ControlLojasRoute: ControlLojasRoute,
+  InviteTokenRoute: InviteTokenRoute,
   PIdRoute: PIdRoute,
   ControlIndexRoute: ControlIndexRoute,
   ApiPublicCronExpireOrdersRoute: ApiPublicCronExpireOrdersRoute,
