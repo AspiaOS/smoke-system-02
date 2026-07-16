@@ -21,7 +21,7 @@ export const Route = createFileRoute("/control/")({
       <div className="text-red-400 text-sm">Erro ao carregar: {String((error as Error)?.message ?? error)}</div>
     </ControlShell>
   ),
-  notFoundComponent: () => <div className="p-8 text-neutral-400">Página não encontrada.</div>,
+  notFoundComponent: () => <div className="p-8 text-muted-foreground">Página não encontrada.</div>,
   component: ControlDashboardPage,
 });
 
@@ -46,9 +46,9 @@ function ControlDashboardPage() {
         {cards.map((c) => (
           <div
             key={c.label}
-            className="border border-neutral-800 rounded-lg p-5 bg-[#111014]"
+            className="border border-border rounded-lg p-5 bg-card"
           >
-            <div className="text-xs uppercase tracking-wide text-neutral-500">{c.label}</div>
+            <div className="text-xs uppercase tracking-wide text-muted-foreground">{c.label}</div>
             <div className="text-3xl font-semibold mt-2">{c.value}</div>
           </div>
         ))}
