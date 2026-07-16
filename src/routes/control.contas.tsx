@@ -34,66 +34,75 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 function ContasPage() {
+  const { admin } = Route.useRouteContext();
+  const canInvite = platformRoleHasCapability(admin.role, "accounts.invite");
   const { data } = useSuspenseQuery({
     queryKey: ["control", "accounts"],
     queryFn: () => listAccounts(),
   });
 
-  if (data.length === 0) {
-    return (
-      <ControlShell title="Contas">
+  return (
+    <ControlShell title="Contas">
+      <div className="flex justify-end mb-4">
+        {canInvite && (
+          <Link
+            to="/control/contas/nova"
+            className="inline-flex items-center gap-1 rounded-md border border-violet-500/40 bg-violet-500/10 px-3 py-1.5 text-sm text-violet-200 hover:bg-violet-500/20"
+          >
+            + Nova conta
+          </Link>
+        )}
+      </div>
+      {data.length === 0 ? (
         <div className="text-neutral-500 text-sm py-16 text-center border border-dashed border-neutral-800 rounded-lg">
           Nenhuma conta encontrada.
         </div>
-      </ControlShell>
-    );
-  }
-
-  return (
-    <ControlShell title="Contas">
-      <div className="border border-neutral-800 rounded-lg overflow-hidden bg-[#111014]">
-        <table className="w-full text-sm">
-          <thead className="bg-black/40 text-neutral-500 text-xs uppercase tracking-wide">
-            <tr>
-              <th className="text-left px-4 py-3">Nome</th>
-              <th className="text-left px-4 py-3">Email</th>
-              <th className="text-left px-4 py-3">Status</th>
-              <th className="text-left px-4 py-3">Memberships</th>
-              <th className="text-left px-4 py-3">Criada</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((row) => (
-              <tr key={row.id} className="border-t border-neutral-800">
-                <td className="px-4 py-3">{row.display_name || "—"}</td>
-                <td className="px-4 py-3 text-neutral-400">{row.email || "—"}</td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`inline-block text-xs px-2 py-0.5 rounded border ${
-                      STATUS_COLORS[row.status] ?? ""
-                    }`}
-                  >
-                    {row.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-neutral-400">
-                  {row.memberships.length === 0
-                    ? "—"
-                    : row.memberships
-                        .map((m) => `${m.role}${m.status !== "active" ? ` (${m.status})` : ""}`)
-                        .join(", ")}
-                </td>
-                <td className="px-4 py-3 text-neutral-500">
-                  {new Date(row.created_at).toLocaleDateString("pt-BR")}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <p className="text-xs text-neutral-600 mt-4">
-        {data.length} conta(s). Ações de convite, suspensão e alteração de papel chegam na próxima fase.
-      </p>
+      ) : (
+        <>
+          <div className="border border-neutral-800 rounded-lg overflow-hidden bg-[#111014]">
+            <table className="w-full text-sm">
+              <thead className="bg-black/40 text-neutral-500 text-xs uppercase tracking-wide">
+                <tr>
+                  <th className="text-left px-4 py-3">Nome</th>
+                  <th className="text-left px-4 py-3">Email</th>
+                  <th className="text-left px-4 py-3">Status</th>
+                  <th className="text-left px-4 py-3">Memberships</th>
+                  <th className="text-left px-4 py-3">Criada</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.map((row) => (
+                  <tr key={row.id} className="border-t border-neutral-800">
+                    <td className="px-4 py-3">{row.display_name || "—"}</td>
+                    <td className="px-4 py-3 text-neutral-400">{row.email || "—"}</td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-block text-xs px-2 py-0.5 rounded border ${
+                          STATUS_COLORS[row.status] ?? ""
+                        }`}
+                      >
+                        {row.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-neutral-400">
+                      {row.memberships.length === 0
+                        ? "—"
+                        : row.memberships
+                            .map((m) => `${m.role}${m.status !== "active" ? ` (${m.status})` : ""}`)
+                            .join(", ")}
+                    </td>
+                    <td className="px-4 py-3 text-neutral-500">
+                      {new Date(row.created_at).toLocaleDateString("pt-BR")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs text-neutral-600 mt-4">{data.length} conta(s).</p>
+        </>
+      )}
     </ControlShell>
   );
 }
+
