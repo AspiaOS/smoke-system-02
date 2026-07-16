@@ -141,8 +141,9 @@ function ProductDetail() {
 
   const uploadImage = useMutation({
     mutationFn: async (file: File) => {
-      const ext = file.name.split(".").pop() || "jpg";
-      const path = `${id}/${crypto.randomUUID()}.${ext}`;
+      const { assertValidImage, safeExtension } = await import("@/lib/upload");
+      assertValidImage(file);
+      const path = `${id}/${crypto.randomUUID()}.${safeExtension(file)}`;
       const { error } = await supabase.storage.from("product-media").upload(path, file, {
         contentType: file.type,
         upsert: false,
