@@ -21,6 +21,8 @@ import { Route as ControlLoginRouteImport } from './routes/control.login'
 import { Route as ControlContasRouteImport } from './routes/control.contas'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as ControlLojasNovaRouteImport } from './routes/control.lojas.nova'
+import { Route as ControlContasNovaRouteImport } from './routes/control.contas.nova'
 import { Route as AuthenticatedAdminVendasRouteImport } from './routes/_authenticated/admin.vendas'
 import { Route as AuthenticatedAdminPedidosRouteImport } from './routes/_authenticated/admin.pedidos'
 import { Route as AuthenticatedAdminFreteRouteImport } from './routes/_authenticated/admin.frete'
@@ -93,6 +95,16 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const ControlLojasNovaRoute = ControlLojasNovaRouteImport.update({
+  id: '/nova',
+  path: '/nova',
+  getParentRoute: () => ControlLojasRoute,
+} as any)
+const ControlContasNovaRoute = ControlContasNovaRouteImport.update({
+  id: '/nova',
+  path: '/nova',
+  getParentRoute: () => ControlContasRoute,
 } as any)
 const AuthenticatedAdminVendasRoute =
   AuthenticatedAdminVendasRouteImport.update({
@@ -177,9 +189,9 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/checkout': typeof CheckoutRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
-  '/control/contas': typeof ControlContasRoute
+  '/control/contas': typeof ControlContasRouteWithChildren
   '/control/login': typeof ControlLoginRoute
-  '/control/lojas': typeof ControlLojasRoute
+  '/control/lojas': typeof ControlLojasRouteWithChildren
   '/invite/$token': typeof InviteTokenRoute
   '/p/$id': typeof PIdRoute
   '/control/': typeof ControlIndexRoute
@@ -193,6 +205,8 @@ export interface FileRoutesByFullPath {
   '/admin/frete': typeof AuthenticatedAdminFreteRoute
   '/admin/pedidos': typeof AuthenticatedAdminPedidosRoute
   '/admin/vendas': typeof AuthenticatedAdminVendasRoute
+  '/control/contas/nova': typeof ControlContasNovaRoute
+  '/control/lojas/nova': typeof ControlLojasNovaRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/produtos/$id': typeof AuthenticatedAdminProdutosIdRoute
   '/api/public/cron/expire-orders': typeof ApiPublicCronExpireOrdersRoute
@@ -202,9 +216,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/checkout': typeof CheckoutRoute
-  '/control/contas': typeof ControlContasRoute
+  '/control/contas': typeof ControlContasRouteWithChildren
   '/control/login': typeof ControlLoginRoute
-  '/control/lojas': typeof ControlLojasRoute
+  '/control/lojas': typeof ControlLojasRouteWithChildren
   '/invite/$token': typeof InviteTokenRoute
   '/p/$id': typeof PIdRoute
   '/control': typeof ControlIndexRoute
@@ -218,6 +232,8 @@ export interface FileRoutesByTo {
   '/admin/frete': typeof AuthenticatedAdminFreteRoute
   '/admin/pedidos': typeof AuthenticatedAdminPedidosRoute
   '/admin/vendas': typeof AuthenticatedAdminVendasRoute
+  '/control/contas/nova': typeof ControlContasNovaRoute
+  '/control/lojas/nova': typeof ControlLojasNovaRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/produtos/$id': typeof AuthenticatedAdminProdutosIdRoute
   '/api/public/cron/expire-orders': typeof ApiPublicCronExpireOrdersRoute
@@ -230,9 +246,9 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/checkout': typeof CheckoutRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
-  '/control/contas': typeof ControlContasRoute
+  '/control/contas': typeof ControlContasRouteWithChildren
   '/control/login': typeof ControlLoginRoute
-  '/control/lojas': typeof ControlLojasRoute
+  '/control/lojas': typeof ControlLojasRouteWithChildren
   '/invite/$token': typeof InviteTokenRoute
   '/p/$id': typeof PIdRoute
   '/control/': typeof ControlIndexRoute
@@ -246,6 +262,8 @@ export interface FileRoutesById {
   '/_authenticated/admin/frete': typeof AuthenticatedAdminFreteRoute
   '/_authenticated/admin/pedidos': typeof AuthenticatedAdminPedidosRoute
   '/_authenticated/admin/vendas': typeof AuthenticatedAdminVendasRoute
+  '/control/contas/nova': typeof ControlContasNovaRoute
+  '/control/lojas/nova': typeof ControlLojasNovaRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/produtos/$id': typeof AuthenticatedAdminProdutosIdRoute
   '/api/public/cron/expire-orders': typeof ApiPublicCronExpireOrdersRoute
@@ -274,6 +292,8 @@ export interface FileRouteTypes {
     | '/admin/frete'
     | '/admin/pedidos'
     | '/admin/vendas'
+    | '/control/contas/nova'
+    | '/control/lojas/nova'
     | '/admin/'
     | '/admin/produtos/$id'
     | '/api/public/cron/expire-orders'
@@ -299,6 +319,8 @@ export interface FileRouteTypes {
     | '/admin/frete'
     | '/admin/pedidos'
     | '/admin/vendas'
+    | '/control/contas/nova'
+    | '/control/lojas/nova'
     | '/admin'
     | '/admin/produtos/$id'
     | '/api/public/cron/expire-orders'
@@ -326,6 +348,8 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/frete'
     | '/_authenticated/admin/pedidos'
     | '/_authenticated/admin/vendas'
+    | '/control/contas/nova'
+    | '/control/lojas/nova'
     | '/_authenticated/admin/'
     | '/_authenticated/admin/produtos/$id'
     | '/api/public/cron/expire-orders'
@@ -337,9 +361,9 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   CheckoutRoute: typeof CheckoutRoute
-  ControlContasRoute: typeof ControlContasRoute
+  ControlContasRoute: typeof ControlContasRouteWithChildren
   ControlLoginRoute: typeof ControlLoginRoute
-  ControlLojasRoute: typeof ControlLojasRoute
+  ControlLojasRoute: typeof ControlLojasRouteWithChildren
   InviteTokenRoute: typeof InviteTokenRoute
   PIdRoute: typeof PIdRoute
   ControlIndexRoute: typeof ControlIndexRoute
@@ -431,6 +455,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/control/lojas/nova': {
+      id: '/control/lojas/nova'
+      path: '/nova'
+      fullPath: '/control/lojas/nova'
+      preLoaderRoute: typeof ControlLojasNovaRouteImport
+      parentRoute: typeof ControlLojasRoute
+    }
+    '/control/contas/nova': {
+      id: '/control/contas/nova'
+      path: '/nova'
+      fullPath: '/control/contas/nova'
+      preLoaderRoute: typeof ControlContasNovaRouteImport
+      parentRoute: typeof ControlContasRoute
     }
     '/_authenticated/admin/vendas': {
       id: '/_authenticated/admin/vendas'
@@ -572,14 +610,38 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface ControlContasRouteChildren {
+  ControlContasNovaRoute: typeof ControlContasNovaRoute
+}
+
+const ControlContasRouteChildren: ControlContasRouteChildren = {
+  ControlContasNovaRoute: ControlContasNovaRoute,
+}
+
+const ControlContasRouteWithChildren = ControlContasRoute._addFileChildren(
+  ControlContasRouteChildren,
+)
+
+interface ControlLojasRouteChildren {
+  ControlLojasNovaRoute: typeof ControlLojasNovaRoute
+}
+
+const ControlLojasRouteChildren: ControlLojasRouteChildren = {
+  ControlLojasNovaRoute: ControlLojasNovaRoute,
+}
+
+const ControlLojasRouteWithChildren = ControlLojasRoute._addFileChildren(
+  ControlLojasRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   CheckoutRoute: CheckoutRoute,
-  ControlContasRoute: ControlContasRoute,
+  ControlContasRoute: ControlContasRouteWithChildren,
   ControlLoginRoute: ControlLoginRoute,
-  ControlLojasRoute: ControlLojasRoute,
+  ControlLojasRoute: ControlLojasRouteWithChildren,
   InviteTokenRoute: InviteTokenRoute,
   PIdRoute: PIdRoute,
   ControlIndexRoute: ControlIndexRoute,
