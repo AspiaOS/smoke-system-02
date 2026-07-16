@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { platformRoleHasCapability, type PlatformCapability, type PlatformRole } from "@/lib/authz/matrix";
+import type { PlatformRole } from "@/lib/authz/matrix";
 
 /**
  * Retorna o registro de platform_admin do usuário autenticado, ou null.
@@ -9,37 +9,29 @@ import { platformRoleHasCapability, type PlatformCapability, type PlatformRole }
 export const getPlatformAdminSelf = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
+    // Espelha assertPlatformAdmin: active em platform_admins + profile ativo.
+    const [adminRes, profileRes] = await Promise.all([
+      context.supabase
       .from("platform_admins")
       .select("user_id, role, active")
       .eq("user_id", context.userId)
-      .maybeSingle();
-    if (error || !data || !data.active) return null;
+      .maybeSingle(),
+      context.supabase
+      .from("profiles")
+      .select("status")
+      .eq("id", context.userId)
+      .maybeSingle(),
+    ]);
+    if (adminRes.error || !adminRes.data || !adminRes.data.active) return null;
+    if (profileRes.error) return null;
+    // Profile ausente é aceito (admins globais podem não ter profile de loja);
+    // profile suspenso/arquivado barra o acesso.
+    if (profileRes.data && profileRes.data.status !== "active") return null;
     return {
-      userId: data.user_id,
-      role: data.role as PlatformRole,
+      userId: adminRes.data.user_id,
+      role: adminRes.data.role as PlatformRole,
     };
   });
-
-async function assertPlatformAdmin(
-  supabase: import("@supabase/supabase-js").SupabaseClient,
-  userId: string,
-  capability?: PlatformCapability,
-): Promise<PlatformRole> {
-  const { data, error } = await supabase
-    .from("platform_admins")
-    .select("role, active")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (error || !data || !data.active) {
-    throw new Response("Forbidden", { status: 403 });
-  }
-  const role = data.role as PlatformRole;
-  if (capability && !platformRoleHasCapability(role, capability)) {
-    throw new Response("Forbidden", { status: 403 });
-  }
-  return role;
-}
 
 export type AccountRow = {
   id: string;
@@ -58,6 +50,7 @@ export type AccountRow = {
 export const listAccounts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AccountRow[]> => {
+    const { assertPlatformAdmin } = await import("@/lib/authz/platform.server");
     await assertPlatformAdmin(context.supabase, context.userId, "accounts.view");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -110,6 +103,7 @@ export type StoreRow = {
 export const listStoresForControl = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<StoreRow[]> => {
+    const { assertPlatformAdmin } = await import("@/lib/authz/platform.server");
     await assertPlatformAdmin(context.supabase, context.userId, "stores.view");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -154,6 +148,7 @@ export type ControlDashboardMetrics = {
 export const getControlDashboard = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ControlDashboardMetrics> => {
+    const { assertPlatformAdmin } = await import("@/lib/authz/platform.server");
     await assertPlatformAdmin(context.supabase, context.userId, "audit.view");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
