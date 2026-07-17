@@ -60,7 +60,7 @@ function LojasPage() {
                 <tr>
                   <th className="text-left px-4 py-3">Nome</th>
                   <th className="text-left px-4 py-3">Status</th>
-                  <th className="text-left px-4 py-3">Owners</th>
+                  <th className="text-left px-4 py-3">Owner(s)</th>
                   <th className="text-left px-4 py-3">Membros</th>
                   <th className="text-left px-4 py-3">Criada</th>
                 </tr>
@@ -84,7 +84,29 @@ function LojasPage() {
                         {s.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{s.owners}</td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {s.owners === 0 ? (
+                        <span className="italic">sem owner</span>
+                      ) : (
+                        (() => {
+                          const shown = s.owner_names.slice(0, 2);
+                          const rest = s.owner_names.slice(2);
+                          return (
+                            <span className="inline-flex flex-wrap items-center gap-1">
+                              <span className="text-foreground">{shown.join(", ") || "—"}</span>
+                              {rest.length > 0 && (
+                                <span
+                                  className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border"
+                                  title={rest.join("\n")}
+                                >
+                                  +{rest.length}
+                                </span>
+                              )}
+                            </span>
+                          );
+                        })()
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-muted-foreground">{s.members}</td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {new Date(s.created_at).toLocaleDateString("pt-BR")}
