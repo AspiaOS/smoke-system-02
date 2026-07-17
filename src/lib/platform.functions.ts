@@ -70,38 +70,30 @@ export const createStore = createServerFn({ method: "POST" })
       storeName: string;
       ownerEmail: string;
       ownerName: string;
-      ownerPassword: string;
     }) => d,
   )
-  .handler(async ({ data, context }): Promise<{ storeId: string; ownerId: string }> => {
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{
+      storeId: string;
+      invitationId: string;
+      token: string;
+      link: string;
+      expiresAt: string;
+      userAlreadyExists: boolean;
+    }> => {
     const { assertPlatformAdmin } = await import("@/lib/authz/platform.server");
     await assertPlatformAdmin(context.supabase, context.userId, "stores.create");
     const name = data.storeName.trim();
     const email = data.ownerEmail.trim().toLowerCase();
     const displayName = data.ownerName.trim();
-    if (!name || !email || !displayName || data.ownerPassword.length < 8) {
-      throw new Response("invalid_input", { status: 400 });
-    }
+    if (!name || !displayName) throw new Response("invalid_input", { status: 400 });
+    if (!EMAIL_RE.test(email)) throw new Response("invalid_email", { status: 400 });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // Find or create the auth user
-    let ownerId: string | null = null;
-    const { data: existing } = await supabaseAdmin.auth.admin.listUsers({ perPage: 200 });
-    const found = existing?.users.find((u) => u.email?.toLowerCase() === email);
-    if (found) {
-      ownerId = found.id;
-    } else {
-      const { data: created, error: cerr } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password: data.ownerPassword,
-        email_confirm: true,
-        user_metadata: { display_name: displayName },
-      });
-      if (cerr || !created.user) throw new Response(cerr?.message ?? "create_user_failed", { status: 400 });
-      ownerId = created.user.id;
-    }
-
-    // Create the store
+    // Create the store (awaiting owner acceptance).
     const { data: store, error: serr } = await supabaseAdmin
       .from("stores")
       .insert({ name, status: "active" })
@@ -109,34 +101,69 @@ export const createStore = createServerFn({ method: "POST" })
       .single();
     if (serr || !store) throw new Response(serr?.message ?? "store_create_failed", { status: 400 });
 
-    // Ensure profile row for owner scoped to this store
-    await supabaseAdmin
-      .from("profiles")
-      .upsert(
-        { id: ownerId, store_id: store.id, display_name: displayName, status: "active" },
-        { onConflict: "id" },
-      );
+    // Não duplica auth.users: apenas sinaliza no payload da auditoria.
+    const { data: authList } = await supabaseAdmin.auth.admin.listUsers({ perPage: 200 });
+    const userAlreadyExists = !!authList?.users.find((u) => u.email?.toLowerCase() === email);
 
-    // Create owner membership
-    const { error: merr } = await supabaseAdmin.from("store_memberships").upsert(
-      {
-        user_id: ownerId,
+    // Cancela convites pendentes anteriores para o mesmo par (email, loja).
+    await supabaseAdmin
+      .from("account_invitations")
+      .update({ status: "cancelled" })
+      .eq("store_id", store.id)
+      .eq("email", email)
+      .eq("status", "pending");
+
+    const token = randomBytes(24).toString("base64url");
+    const tokenHash = createHash("sha256").update(token).digest("hex");
+    const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString();
+
+    const { data: inv, error: ierr } = await supabaseAdmin
+      .from("account_invitations")
+      .insert({
         store_id: store.id,
-        role: "owner",
-        status: "active",
-        accepted_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id,store_id" },
-    );
-    if (merr) throw new Response(merr.message, { status: 400 });
+        email,
+        role: "owner" as never,
+        invited_by: context.userId,
+        token_hash: tokenHash,
+        status: "pending",
+        expires_at: expiresAt,
+      })
+      .select("id")
+      .single();
+    if (ierr || !inv) throw new Response(ierr?.message ?? "invite_failed", { status: 400 });
 
     await logPlatform(supabaseAdmin, context.userId, "store.create", "store", store.id, {
       name,
-      owner_id: ownerId,
       owner_email: email,
+      owner_display_name: displayName,
+      pending_invitation_id: inv.id,
     });
 
-    return { storeId: store.id, ownerId };
+    await logPlatform(
+      supabaseAdmin,
+      context.userId,
+      "account.invite",
+      "invitation",
+      inv.id,
+      {
+        email,
+        store_id: store.id,
+        role: "owner",
+        display_name: displayName,
+        user_already_exists: userAlreadyExists,
+        expires_at: expiresAt,
+      },
+      store.id,
+    );
+
+    return {
+      storeId: store.id,
+      invitationId: inv.id,
+      token,
+      link: `/invite/${token}`,
+      expiresAt,
+      userAlreadyExists,
+    };
   });
 
 export const setStoreStatus = createServerFn({ method: "POST" })

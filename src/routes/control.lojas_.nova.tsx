@@ -30,23 +30,81 @@ function NovaLojaPage() {
   const [storeName, setStoreName] = useState("");
   const [ownerName, setOwnerName] = useState("");
   const [ownerEmail, setOwnerEmail] = useState("");
-  const [ownerPassword, setOwnerPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [invite, setInvite] = useState<{
+    link: string;
+    expiresAt: string;
+    userAlreadyExists: boolean;
+  } | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     try {
-      await createStoreFn({
-        data: { storeName, ownerEmail, ownerName, ownerPassword },
+      const res = await createStoreFn({
+        data: { storeName, ownerEmail, ownerName },
       });
-      toast.success("Loja criada");
-      navigate({ to: "/control/lojas" });
+      const inviteLink =
+        typeof window !== "undefined"
+          ? `${window.location.origin}${res.link}`
+          : res.link;
+      setInvite({
+        link: inviteLink,
+        expiresAt: res.expiresAt,
+        userAlreadyExists: res.userAlreadyExists,
+      });
+      toast.success("Loja criada — envie o convite ao dono");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao criar loja");
     } finally {
       setLoading(false);
     }
+  }
+
+  if (invite) {
+    return (
+      <ControlShell title="Nova loja">
+        <div className="max-w-xl space-y-4">
+          <h2 className="text-sm font-medium text-foreground">
+            Loja criada. Envie o link de convite ao dono.
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            O dono precisa abrir o link, autenticar-se com{" "}
+            <span className="font-medium">{ownerEmail}</span> e aceitar o convite para
+            ativar a propriedade da loja.
+            {invite.userAlreadyExists
+              ? " Esse email já tem conta na plataforma."
+              : " Esse email ainda não tem conta — ele precisará se cadastrar antes de aceitar."}
+          </p>
+          <div className="rounded-md border border-border bg-muted/30 p-3 text-sm break-all font-mono">
+            {invite.link}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Expira em {new Date(invite.expiresAt).toLocaleString("pt-BR")}.
+          </p>
+          <div className="flex gap-3 pt-2">
+            <Button
+              type="button"
+              onClick={() => {
+                if (typeof navigator !== "undefined" && navigator.clipboard) {
+                  navigator.clipboard.writeText(invite.link);
+                  toast.success("Link copiado");
+                }
+              }}
+            >
+              Copiar link
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate({ to: "/control/lojas" })}
+            >
+              Voltar às lojas
+            </Button>
+          </div>
+        </div>
+      </ControlShell>
+    );
   }
 
   return (
@@ -63,6 +121,9 @@ function NovaLojaPage() {
         </div>
         <div className="pt-4 border-t border-border">
           <h2 className="text-sm font-medium text-foreground mb-3">Dono da loja</h2>
+          <p className="text-xs text-muted-foreground mb-3">
+            O dono receberá um link de convite e definirá a própria senha ao aceitar.
+          </p>
           <div className="space-y-4">
             <div>
               <Label htmlFor="ownerName">Nome</Label>
@@ -83,22 +144,11 @@ function NovaLojaPage() {
                 required
               />
             </div>
-            <div>
-              <Label htmlFor="ownerPassword">Senha inicial (mín. 8)</Label>
-              <Input
-                id="ownerPassword"
-                type="password"
-                minLength={8}
-                value={ownerPassword}
-                onChange={(e) => setOwnerPassword(e.target.value)}
-                required
-              />
-            </div>
           </div>
         </div>
         <div className="flex gap-3 pt-2">
           <Button type="submit" disabled={loading}>
-            {loading ? "Criando..." : "Criar loja e dono"}
+            {loading ? "Criando..." : "Criar loja e convidar dono"}
           </Button>
           <Button
             type="button"
