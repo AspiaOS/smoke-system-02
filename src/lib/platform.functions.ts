@@ -568,7 +568,7 @@ export type SecurityOverview = {
     action: string;
     actor_email: string | null;
     target_type: string;
-    target_id: string;
+    target_id: string | null;
     store_name: string | null;
     created_at: string;
   }>;
