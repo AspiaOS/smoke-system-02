@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { LogOut, LayoutDashboard, Users, Store, ScrollText } from "lucide-react";
+import { LogOut, LayoutDashboard, Users, Store, ScrollText, Mail, KeyRound, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
@@ -8,6 +8,9 @@ const NAV = [
   { to: "/control", label: "Visão geral", icon: LayoutDashboard, exact: true },
   { to: "/control/contas", label: "Contas", icon: Users, exact: false },
   { to: "/control/lojas", label: "Lojas", icon: Store, exact: false },
+  { to: "/control/convites", label: "Convites", icon: Mail, exact: false },
+  { to: "/control/permissoes", label: "Permissões", icon: KeyRound, exact: false },
+  { to: "/control/seguranca", label: "Segurança", icon: ShieldCheck, exact: false },
   { to: "/control/auditoria", label: "Auditoria", icon: ScrollText, exact: false },
 ] as const;
 

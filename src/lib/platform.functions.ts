@@ -456,6 +456,196 @@ export const revokeInvite = createServerFn({ method: "POST" })
   });
 
 /**
+ * Reenvia um convite pendente: gera novo token, estende expiração para 72h
+ * a partir de agora, mantém status = 'pending'. Retorna o novo link.
+ */
+export const resendInvite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { invitationId: string }) => {
+    if (!d.invitationId) throw new Response("invalid_input", { status: 400 });
+    return d;
+  })
+  .handler(async ({ data, context }): Promise<{ token: string; link: string; expiresAt: string }> => {
+    const { assertPlatformAdmin } = await import("@/lib/authz/platform.server");
+    await assertPlatformAdmin(context.supabase, context.userId, "accounts.invite");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: inv } = await supabaseAdmin
+      .from("account_invitations")
+      .select("id, email, store_id, role, status, expires_at")
+      .eq("id", data.invitationId)
+      .maybeSingle();
+    if (!inv) throw new Response("invite_not_found", { status: 404 });
+    if (inv.status !== "pending") throw new Response("invite_not_pending", { status: 409 });
+
+    const token = randomBytes(24).toString("base64url");
+    const tokenHash = createHash("sha256").update(token).digest("hex");
+    const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString();
+    const { error } = await supabaseAdmin
+      .from("account_invitations")
+      .update({ token_hash: tokenHash, expires_at: expiresAt })
+      .eq("id", inv.id);
+    if (error) throw new Response(error.message, { status: 400 });
+    await logPlatform(
+      supabaseAdmin,
+      context.userId,
+      "account.invite_resent",
+      "invitation",
+      inv.id,
+      { email: inv.email, store_id: inv.store_id, previous_expires_at: inv.expires_at, expires_at: expiresAt },
+      inv.store_id,
+    );
+    return { token, link: `/invite/${token}`, expiresAt };
+  });
+
+export type PendingInviteRow = {
+  id: string;
+  email: string;
+  role: string;
+  store_id: string;
+  store_name: string;
+  invited_by_email: string | null;
+  status: string;
+  created_at: string;
+  expires_at: string;
+  expired: boolean;
+};
+
+export const listPendingInvites = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<PendingInviteRow[]> => {
+    const { assertPlatformAdmin } = await import("@/lib/authz/platform.server");
+    await assertPlatformAdmin(context.supabase, context.userId, "accounts.view");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: rows, error } = await supabaseAdmin
+      .from("account_invitations")
+      .select("id, email, role, store_id, status, created_at, expires_at, invited_by")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+    if (error) throw new Response(error.message, { status: 400 });
+
+    const storeIds = Array.from(new Set((rows ?? []).map((r) => r.store_id)));
+    const storeMap = new Map<string, string>();
+    if (storeIds.length > 0) {
+      const { data: stores } = await supabaseAdmin.from("stores").select("id, name").in("id", storeIds);
+      for (const s of stores ?? []) storeMap.set(s.id, s.name);
+    }
+    const inviterIds = Array.from(new Set((rows ?? []).map((r) => r.invited_by).filter(Boolean))) as string[];
+    const inviterMap = new Map<string, string>();
+    if (inviterIds.length > 0) {
+      const { data: users } = await supabaseAdmin.auth.admin.listUsers({ perPage: 200 });
+      for (const u of users?.users ?? []) if (inviterIds.includes(u.id)) inviterMap.set(u.id, u.email ?? "");
+    }
+    const now = Date.now();
+    return (rows ?? []).map((r) => ({
+      id: r.id,
+      email: r.email as string,
+      role: r.role as string,
+      store_id: r.store_id,
+      store_name: storeMap.get(r.store_id) ?? r.store_id,
+      invited_by_email: r.invited_by ? inviterMap.get(r.invited_by) ?? null : null,
+      status: r.status as string,
+      created_at: r.created_at,
+      expires_at: r.expires_at,
+      expired: new Date(r.expires_at).getTime() < now,
+    }));
+  });
+
+export type SecurityOverview = {
+  super_admins: Array<{
+    user_id: string;
+    email: string;
+    display_name: string;
+    profile_status: string | null;
+    created_at: string;
+    last_seen_at: string | null;
+  }>;
+  support_admins_count: number;
+  security_auditors_count: number;
+  recent_events: Array<{
+    id: string;
+    action: string;
+    actor_email: string | null;
+    target_type: string;
+    target_id: string | null;
+    store_name: string | null;
+    created_at: string;
+  }>;
+};
+
+export const getSecurityOverview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<SecurityOverview> => {
+    const { assertPlatformAdmin } = await import("@/lib/authz/platform.server");
+    await assertPlatformAdmin(context.supabase, context.userId, "audit.view");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const [{ data: admins }, { data: users }] = await Promise.all([
+      supabaseAdmin.from("platform_admins").select("user_id, role, active, created_at").eq("active", true),
+      supabaseAdmin.auth.admin.listUsers({ perPage: 200 }),
+    ]);
+    const emailMap = new Map<string, string>();
+    for (const u of users?.users ?? []) emailMap.set(u.id, u.email ?? "");
+
+    const superIds = (admins ?? []).filter((a) => a.role === "super_admin").map((a) => a.user_id);
+    const { data: profs } = superIds.length
+      ? await supabaseAdmin.from("profiles").select("id, display_name, status, last_seen_at").in("id", superIds)
+      : { data: [] as { id: string; display_name: string; status: string; last_seen_at: string | null }[] };
+    const profMap = new Map((profs ?? []).map((p) => [p.id, p]));
+
+    const superAdmins = (admins ?? [])
+      .filter((a) => a.role === "super_admin")
+      .map((a) => {
+        const p = profMap.get(a.user_id);
+        return {
+          user_id: a.user_id,
+          email: emailMap.get(a.user_id) ?? "",
+          display_name: p?.display_name ?? "",
+          profile_status: p?.status ?? null,
+          created_at: a.created_at,
+          last_seen_at: p?.last_seen_at ?? null,
+        };
+      });
+
+    const SECURITY_ACTIONS = [
+      "account.suspended", "account.archived", "account.active",
+      "membership.assign", "membership.remove",
+      "store.suspended", "store.active", "store.transfer_ownership",
+      "platform_admin.grant", "platform_admin.revoke",
+      "account.invite", "account.invite_revoked", "account.invite_resent",
+    ];
+    const { data: events } = await supabaseAdmin
+      .from("platform_audit_logs")
+      .select("id, action, actor_id, target_type, target_id, store_id, created_at")
+      .in("action", SECURITY_ACTIONS)
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    const storeIds = Array.from(new Set((events ?? []).map((e) => e.store_id).filter(Boolean))) as string[];
+    const storeMap = new Map<string, string>();
+    if (storeIds.length) {
+      const { data: stores } = await supabaseAdmin.from("stores").select("id, name").in("id", storeIds);
+      for (const s of stores ?? []) storeMap.set(s.id, s.name);
+    }
+
+    return {
+      super_admins: superAdmins,
+      support_admins_count: (admins ?? []).filter((a) => a.role === "support_admin").length,
+      security_auditors_count: (admins ?? []).filter((a) => a.role === "security_auditor").length,
+      recent_events: (events ?? []).map((e) => ({
+        id: e.id,
+        action: e.action,
+        actor_email: e.actor_id ? emailMap.get(e.actor_id) ?? null : null,
+        target_type: e.target_type,
+        target_id: e.target_id,
+        store_name: e.store_id ? storeMap.get(e.store_id) ?? null : null,
+        created_at: e.created_at,
+      })),
+    };
+  });
+
+/**
  * Transferência transacional de propriedade da loja.
  * Chama RPC transfer_store_ownership (SECURITY DEFINER, executada em uma
  * única transação: rebaixa owner atual → promove novo owner).

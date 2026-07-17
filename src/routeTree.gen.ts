@@ -17,8 +17,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ControlIndexRouteImport } from './routes/control.index'
 import { Route as PIdRouteImport } from './routes/p.$id'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
+import { Route as ControlSegurancaRouteImport } from './routes/control.seguranca'
+import { Route as ControlPermissoesRouteImport } from './routes/control.permissoes'
 import { Route as ControlLojasRouteImport } from './routes/control.lojas'
 import { Route as ControlLoginRouteImport } from './routes/control.login'
+import { Route as ControlConvitesRouteImport } from './routes/control.convites'
 import { Route as ControlContasRouteImport } from './routes/control.contas'
 import { Route as ControlAuditoriaRouteImport } from './routes/control.auditoria'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -80,6 +83,16 @@ const InviteTokenRoute = InviteTokenRouteImport.update({
   path: '/invite/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ControlSegurancaRoute = ControlSegurancaRouteImport.update({
+  id: '/seguranca',
+  path: '/seguranca',
+  getParentRoute: () => ControlRoute,
+} as any)
+const ControlPermissoesRoute = ControlPermissoesRouteImport.update({
+  id: '/permissoes',
+  path: '/permissoes',
+  getParentRoute: () => ControlRoute,
+} as any)
 const ControlLojasRoute = ControlLojasRouteImport.update({
   id: '/lojas',
   path: '/lojas',
@@ -88,6 +101,11 @@ const ControlLojasRoute = ControlLojasRouteImport.update({
 const ControlLoginRoute = ControlLoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => ControlRoute,
+} as any)
+const ControlConvitesRoute = ControlConvitesRouteImport.update({
+  id: '/convites',
+  path: '/convites',
   getParentRoute: () => ControlRoute,
 } as any)
 const ControlContasRoute = ControlContasRouteImport.update({
@@ -216,8 +234,11 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/control/auditoria': typeof ControlAuditoriaRoute
   '/control/contas': typeof ControlContasRoute
+  '/control/convites': typeof ControlConvitesRoute
   '/control/login': typeof ControlLoginRoute
   '/control/lojas': typeof ControlLojasRoute
+  '/control/permissoes': typeof ControlPermissoesRoute
+  '/control/seguranca': typeof ControlSegurancaRoute
   '/invite/$token': typeof InviteTokenRoute
   '/p/$id': typeof PIdRoute
   '/control/': typeof ControlIndexRoute
@@ -246,8 +267,11 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/control/auditoria': typeof ControlAuditoriaRoute
   '/control/contas': typeof ControlContasRoute
+  '/control/convites': typeof ControlConvitesRoute
   '/control/login': typeof ControlLoginRoute
   '/control/lojas': typeof ControlLojasRoute
+  '/control/permissoes': typeof ControlPermissoesRoute
+  '/control/seguranca': typeof ControlSegurancaRoute
   '/invite/$token': typeof InviteTokenRoute
   '/p/$id': typeof PIdRoute
   '/control': typeof ControlIndexRoute
@@ -280,8 +304,11 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/control/auditoria': typeof ControlAuditoriaRoute
   '/control/contas': typeof ControlContasRoute
+  '/control/convites': typeof ControlConvitesRoute
   '/control/login': typeof ControlLoginRoute
   '/control/lojas': typeof ControlLojasRoute
+  '/control/permissoes': typeof ControlPermissoesRoute
+  '/control/seguranca': typeof ControlSegurancaRoute
   '/invite/$token': typeof InviteTokenRoute
   '/p/$id': typeof PIdRoute
   '/control/': typeof ControlIndexRoute
@@ -314,8 +341,11 @@ export interface FileRouteTypes {
     | '/admin'
     | '/control/auditoria'
     | '/control/contas'
+    | '/control/convites'
     | '/control/login'
     | '/control/lojas'
+    | '/control/permissoes'
+    | '/control/seguranca'
     | '/invite/$token'
     | '/p/$id'
     | '/control/'
@@ -344,8 +374,11 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/control/auditoria'
     | '/control/contas'
+    | '/control/convites'
     | '/control/login'
     | '/control/lojas'
+    | '/control/permissoes'
+    | '/control/seguranca'
     | '/invite/$token'
     | '/p/$id'
     | '/control'
@@ -377,8 +410,11 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/control/auditoria'
     | '/control/contas'
+    | '/control/convites'
     | '/control/login'
     | '/control/lojas'
+    | '/control/permissoes'
+    | '/control/seguranca'
     | '/invite/$token'
     | '/p/$id'
     | '/control/'
@@ -471,6 +507,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InviteTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/control/seguranca': {
+      id: '/control/seguranca'
+      path: '/seguranca'
+      fullPath: '/control/seguranca'
+      preLoaderRoute: typeof ControlSegurancaRouteImport
+      parentRoute: typeof ControlRoute
+    }
+    '/control/permissoes': {
+      id: '/control/permissoes'
+      path: '/permissoes'
+      fullPath: '/control/permissoes'
+      preLoaderRoute: typeof ControlPermissoesRouteImport
+      parentRoute: typeof ControlRoute
+    }
     '/control/lojas': {
       id: '/control/lojas'
       path: '/lojas'
@@ -483,6 +533,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/control/login'
       preLoaderRoute: typeof ControlLoginRouteImport
+      parentRoute: typeof ControlRoute
+    }
+    '/control/convites': {
+      id: '/control/convites'
+      path: '/convites'
+      fullPath: '/control/convites'
+      preLoaderRoute: typeof ControlConvitesRouteImport
       parentRoute: typeof ControlRoute
     }
     '/control/contas': {
@@ -684,8 +741,11 @@ const AuthenticatedRouteRouteWithChildren =
 interface ControlRouteChildren {
   ControlAuditoriaRoute: typeof ControlAuditoriaRoute
   ControlContasRoute: typeof ControlContasRoute
+  ControlConvitesRoute: typeof ControlConvitesRoute
   ControlLoginRoute: typeof ControlLoginRoute
   ControlLojasRoute: typeof ControlLojasRoute
+  ControlPermissoesRoute: typeof ControlPermissoesRoute
+  ControlSegurancaRoute: typeof ControlSegurancaRoute
   ControlIndexRoute: typeof ControlIndexRoute
   ControlContasIdRoute: typeof ControlContasIdRoute
   ControlContasNovaRoute: typeof ControlContasNovaRoute
@@ -696,8 +756,11 @@ interface ControlRouteChildren {
 const ControlRouteChildren: ControlRouteChildren = {
   ControlAuditoriaRoute: ControlAuditoriaRoute,
   ControlContasRoute: ControlContasRoute,
+  ControlConvitesRoute: ControlConvitesRoute,
   ControlLoginRoute: ControlLoginRoute,
   ControlLojasRoute: ControlLojasRoute,
+  ControlPermissoesRoute: ControlPermissoesRoute,
+  ControlSegurancaRoute: ControlSegurancaRoute,
   ControlIndexRoute: ControlIndexRoute,
   ControlContasIdRoute: ControlContasIdRoute,
   ControlContasNovaRoute: ControlContasNovaRoute,
