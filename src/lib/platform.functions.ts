@@ -308,47 +308,18 @@ export const setAccountStatus = createServerFn({ method: "POST" })
       data.status === "suspended" ? "accounts.suspend" : data.status === "archived" ? "accounts.archive" : "accounts.reactivate",
     );
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    // Guard: nunca deixe a plataforma sem super_admin ativo. Ao suspender/arquivar
-    // um super_admin, confirma que existe pelo menos um outro super_admin com
-    // profiles.status='active' — checagem "melhor esforço": não é livre de corrida
-    // em suspensão simultânea, mas cobre o caso comum.
-    if (data.status !== "active") {
-      const { data: adminRow } = await supabaseAdmin
-        .from("platform_admins")
-        .select("role, active")
-        .eq("user_id", data.userId)
-        .maybeSingle();
-      if (adminRow?.active && adminRow.role === "super_admin") {
-        const { data: others } = await supabaseAdmin
-          .from("platform_admins")
-          .select("user_id, active, role")
-          .eq("role", "super_admin")
-          .eq("active", true)
-          .neq("user_id", data.userId);
-        const otherIds = (others ?? []).map((r) => r.user_id);
-        let remaining = 0;
-        if (otherIds.length > 0) {
-          const { data: profs } = await supabaseAdmin
-            .from("profiles")
-            .select("id, status")
-            .in("id", otherIds);
-          // Profile ausente conta como ativo (admin global sem loja) — espelha assertPlatformAdmin.
-          const profStatus = new Map((profs ?? []).map((p) => [p.id, p.status]));
-          remaining = otherIds.filter((id) => {
-            const s = profStatus.get(id);
-            return s === undefined || s === "active";
-          }).length;
-        }
-        if (remaining === 0) {
-          throw new Response("last_super_admin", { status: 409 });
-        }
+    // Checagem+update atômicos via RPC com FOR UPDATE nas linhas de super_admins.
+    // Elimina a janela de corrida em suspensões simultâneas (Fase B).
+    const { error } = await supabaseAdmin.rpc("set_account_status_safe", {
+      _user_id: data.userId,
+      _new_status: data.status,
+    });
+    if (error) {
+      if (error.message?.includes("last_super_admin")) {
+        throw new Response("last_super_admin", { status: 409 });
       }
+      throw new Response(error.message, { status: 400 });
     }
-    const { error } = await supabaseAdmin
-      .from("profiles")
-      .update({ status: data.status })
-      .eq("id", data.userId);
-    if (error) throw new Response(error.message, { status: 400 });
     await logPlatform(supabaseAdmin, context.userId, `account.${data.status}`, "account", data.userId);
     return { ok: true };
   });
