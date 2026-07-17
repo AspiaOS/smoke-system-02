@@ -118,7 +118,20 @@ export const listStoresForControl = createServerFn({ method: "GET" })
 
     const { data: mships } = await supabaseAdmin
       .from("store_memberships")
-      .select("store_id, role, status, user_id, profiles(display_name)");
+      .select("store_id, role, status, user_id");
+
+    const ownerUserIds = Array.from(
+      new Set((mships ?? []).filter((m) => m.status === "active" && m.role === "owner").map((m) => m.user_id)),
+    );
+    const nameByUser = new Map<string, string>();
+    if (ownerUserIds.length > 0) {
+      const { data: ownerProfiles } = await supabaseAdmin
+        .from("profiles")
+        .select("id, display_name")
+        .in("id", ownerUserIds);
+      for (const p of ownerProfiles ?? []) nameByUser.set(p.id, p.display_name ?? "");
+    }
+
     const counts = new Map<string, { members: number; owners: number; owner_names: string[] }>();
     for (const m of mships ?? []) {
       const c = counts.get(m.store_id) ?? { members: 0, owners: 0, owner_names: [] };
@@ -126,7 +139,7 @@ export const listStoresForControl = createServerFn({ method: "GET" })
         c.members += 1;
         if (m.role === "owner") {
           c.owners += 1;
-          const name = (m as unknown as { profiles: { display_name: string } | null }).profiles?.display_name;
+          const name = nameByUser.get(m.user_id);
           if (name) c.owner_names.push(name);
         }
       }
