@@ -57,10 +57,10 @@ function AuditPage() {
             type="text"
             defaultValue={search.action ?? ""}
             placeholder="ex.: account.suspended"
-            onKeyDown={(e) => {
+              onKeyDown={(e) => {
               if (e.key === "Enter") {
                 const v = (e.target as HTMLInputElement).value.trim();
-                navigate({ search: (p) => ({ ...p, action: v || undefined }) });
+                  navigate({ search: (p: AuditSearch) => ({ ...p, action: v || undefined }) });
               }
             }}
             className="border border-border bg-card rounded px-2 py-1 text-sm w-56 focus:outline-none focus:border-primary/50"
@@ -71,7 +71,7 @@ function AuditPage() {
           <select
             value={search.targetType ?? ""}
             onChange={(e) =>
-              navigate({ search: (p) => ({ ...p, targetType: e.target.value || undefined }) })
+              navigate({ search: (p: AuditSearch) => ({ ...p, targetType: e.target.value || undefined }) })
             }
             className="border border-border bg-card rounded px-2 py-1 text-sm focus:outline-none focus:border-primary/50"
           >
@@ -87,7 +87,7 @@ function AuditPage() {
           <select
             value={String(search.limit ?? 200)}
             onChange={(e) =>
-              navigate({ search: (p) => ({ ...p, limit: Number(e.target.value) }) })
+              navigate({ search: (p: AuditSearch) => ({ ...p, limit: Number(e.target.value) }) })
             }
             className="border border-border bg-card rounded px-2 py-1 text-sm focus:outline-none focus:border-primary/50"
           >
