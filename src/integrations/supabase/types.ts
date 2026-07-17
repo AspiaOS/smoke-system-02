@@ -1109,6 +1109,10 @@ export type Database = {
         Returns: undefined
       }
       remove_member: { Args: { _membership_id: string }; Returns: undefined }
+      set_account_status_safe: {
+        Args: { _new_status: string; _user_id: string }
+        Returns: undefined
+      }
       stock_adjust: {
         Args: { _new_qty: number; _note: string; _variation_id: string }
         Returns: {
