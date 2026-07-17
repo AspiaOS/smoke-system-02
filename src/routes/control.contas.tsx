@@ -33,6 +33,20 @@ const STATUS_COLORS: Record<string, string> = {
   archived: "text-muted-foreground bg-muted border-border",
 };
 
+const ROLE_PRIORITY: Record<string, number> = {
+  owner: 0,
+  admin: 1,
+  manager: 2,
+  staff: 3,
+};
+
+function sortMemberships<T extends { role: string; status: string }>(list: T[]): T[] {
+  return [...list].sort((a, b) => {
+    if (a.status !== b.status) return a.status === "active" ? -1 : 1;
+    return (ROLE_PRIORITY[a.role] ?? 99) - (ROLE_PRIORITY[b.role] ?? 99);
+  });
+}
+
 function ContasPage() {
   const { admin } = Route.useRouteContext();
   const canInvite = platformRoleHasCapability(admin.role, "accounts.invite");
@@ -89,11 +103,39 @@ function ContasPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {row.memberships.length === 0
-                        ? "—"
-                        : row.memberships
-                            .map((m) => `${m.role}${m.status !== "active" ? ` (${m.status})` : ""}`)
-                            .join(", ")}
+                      {row.memberships.length === 0 ? (
+                        <span className="italic">sem loja</span>
+                      ) : (
+                        (() => {
+                          const sorted = sortMemberships(row.memberships);
+                          const shown = sorted.slice(0, 2);
+                          const rest = sorted.slice(2);
+                          return (
+                            <span className="inline-flex flex-wrap items-center gap-1">
+                              {shown.map((m, i) => (
+                                <span key={`${m.store_id}-${i}`} className="text-foreground">
+                                  <span className="font-medium">{m.store_name || "—"}</span>
+                                  <span className="text-muted-foreground"> · {m.role}</span>
+                                  {m.status !== "active" && (
+                                    <span className="text-muted-foreground"> ({m.status})</span>
+                                  )}
+                                  {i < shown.length - 1 && <span className="text-muted-foreground">,</span>}
+                                </span>
+                              ))}
+                              {rest.length > 0 && (
+                                <span
+                                  className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border"
+                                  title={rest
+                                    .map((m) => `${m.store_name || "—"} · ${m.role}${m.status !== "active" ? ` (${m.status})` : ""}`)
+                                    .join("\n")}
+                                >
+                                  +{rest.length}
+                                </span>
+                              )}
+                            </span>
+                          );
+                        })()
+                      )}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {new Date(row.created_at).toLocaleDateString("pt-BR")}

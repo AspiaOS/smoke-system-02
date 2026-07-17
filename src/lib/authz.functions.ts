@@ -42,6 +42,7 @@ export type AccountRow = {
   created_at: string;
   memberships: Array<{
     store_id: string;
+    store_name: string;
     role: string;
     status: string;
   }>;
@@ -71,11 +72,12 @@ export const listAccounts = createServerFn({ method: "GET" })
 
     const { data: mships } = await supabaseAdmin
       .from("store_memberships")
-      .select("user_id, store_id, role, status");
+      .select("user_id, store_id, role, status, stores(name)");
     const byUser = new Map<string, AccountRow["memberships"]>();
     for (const m of mships ?? []) {
       const arr = byUser.get(m.user_id) ?? [];
-      arr.push({ store_id: m.store_id, role: m.role, status: m.status });
+      const storeName = (m as unknown as { stores: { name: string } | null }).stores?.name ?? "";
+      arr.push({ store_id: m.store_id, store_name: storeName, role: m.role, status: m.status });
       byUser.set(m.user_id, arr);
     }
 
@@ -98,6 +100,7 @@ export type StoreRow = {
   created_at: string;
   members: number;
   owners: number;
+  owner_names: string[];
 };
 
 export const listStoresForControl = createServerFn({ method: "GET" })
@@ -115,13 +118,17 @@ export const listStoresForControl = createServerFn({ method: "GET" })
 
     const { data: mships } = await supabaseAdmin
       .from("store_memberships")
-      .select("store_id, role, status");
-    const counts = new Map<string, { members: number; owners: number }>();
+      .select("store_id, role, status, user_id, profiles(display_name)");
+    const counts = new Map<string, { members: number; owners: number; owner_names: string[] }>();
     for (const m of mships ?? []) {
-      const c = counts.get(m.store_id) ?? { members: 0, owners: 0 };
+      const c = counts.get(m.store_id) ?? { members: 0, owners: 0, owner_names: [] };
       if (m.status === "active") {
         c.members += 1;
-        if (m.role === "owner") c.owners += 1;
+        if (m.role === "owner") {
+          c.owners += 1;
+          const name = (m as unknown as { profiles: { display_name: string } | null }).profiles?.display_name;
+          if (name) c.owner_names.push(name);
+        }
       }
       counts.set(m.store_id, c);
     }
@@ -133,6 +140,7 @@ export const listStoresForControl = createServerFn({ method: "GET" })
       created_at: s.created_at,
       members: counts.get(s.id)?.members ?? 0,
       owners: counts.get(s.id)?.owners ?? 0,
+      owner_names: counts.get(s.id)?.owner_names ?? [],
     }));
   });
 
